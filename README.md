@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # THB Operations Hub
 
 A comprehensive business operations dashboard built with React, designed for desktop-focused business management.
@@ -92,3 +93,6 @@ Each module is designed to be expanded with:
 ## 📝 License
 
 This project is designed as a personal business management tool and template for client projects.
+=======
+# THB_HUB
+>>>>>>> f3632478fe01855bd82d6cbc5812ded62c2b943f

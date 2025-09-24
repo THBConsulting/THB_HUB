@@ -1018,148 +1018,157 @@ export const supabaseAPI = {
   },
 
   async saveProjects(projects) {
-    const supabase = await this.initialize()
-    if (!supabase) return
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return
 
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .upsert(projects.map(project => ({
-          ...project,
-          updated_at: new Date().toISOString()
-        })), { onConflict: 'id' })
+    // try {
+    //   const { error } = await supabase
+    //     .from('projects')
+    //     .upsert(projects.map(project => ({
+    //       ...project,
+    //       updated_at: new Date().toISOString()
+    //     })), { onConflict: 'id' })
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
-          return
-        }
-        throw error
-      }
-    } catch (error) {
-      console.error('Error saving projects to Supabase:', error)
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
+    //       return
+    //     }
+    //     throw error
+    //   }
+    // } catch (error) {
+    //   console.error('Error saving projects to Supabase:', error)
+    // }
   },
 
   async saveProspects(prospects) {
-    const supabase = await this.initialize()
-    if (!supabase) return
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return
 
-    try {
-      const { error } = await supabase
-        .from('prospects')
-        .upsert(prospects.map(prospect => ({
-          ...prospect,
-          updated_at: new Date().toISOString()
-        })), { onConflict: 'id' })
+    // try {
+    //   const { error } = await supabase
+    //     .from('prospects')
+    //     .upsert(prospects.map(prospect => ({
+    //       ...prospect,
+    //       updated_at: new Date().toISOString()
+    //     })), { onConflict: 'id' })
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
-          return
-        }
-        throw error
-      }
-    } catch (error) {
-      console.error('Error saving prospects to Supabase:', error)
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
+    //       return
+    //     }
+    //     throw error
+    //   }
+    // } catch (error) {
+    //   console.error('Error saving prospects to Supabase:', error)
+    // }
   },
 
   async saveStrategyGoals(strategyGoals) {
-    const supabase = await this.initialize()
-    if (!supabase) return
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return
 
-    try {
-      const { error } = await supabase
-        .from('strategy_goals')
-        .upsert({
-          id: 1, // Single strategy goals record
-          ...strategyGoals,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
+    // try {
+    //   const { error } = await supabase
+    //     .from('strategy_goals')
+    //     .upsert({
+    //       id: 1, // Single strategy goals record
+    //       ...strategyGoals,
+    //       updated_at: new Date().toISOString()
+    //     }, { onConflict: 'id' })
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
-          return
-        }
-        throw error
-      }
-    } catch (error) {
-      console.error('Error saving strategy goals to Supabase:', error)
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
+    //       return
+    //     }
+    //     throw error
+    //   }
+    // } catch (error) {
+    //   console.error('Error saving strategy goals to Supabase:', error)
+    // }
   },
 
   async loadProjects() {
-    const supabase = await this.initialize()
-    if (!supabase) return []
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return []
 
-    try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
+    // try {
+    //   const { data, error } = await supabase
+    //     .from('projects')
+    //     .select('*')
+    //     .order('created_at', { ascending: false })
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
-          return []
-        }
-        throw error
-      }
-      return data || []
-    } catch (error) {
-      console.error('Error loading projects from Supabase:', error)
-      return []
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
+    //       return []
+    //     }
+    //     throw error
+    //   }
+    //   return data || []
+    // } catch (error) {
+    //   console.error('Error loading projects from Supabase:', error)
+    //   return []
+    // }
+    return []
   },
 
   async loadProspects() {
-    const supabase = await this.initialize()
-    if (!supabase) return []
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return []
 
-    try {
-      const { data, error } = await supabase
-        .from('prospects')
-        .select('*')
-        .order('created_at', { ascending: false })
+    // try {
+    //   const { data, error } = await supabase
+    //     .from('prospects')
+    //     .select('*')
+    //     .order('created_at', { ascending: false })
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
-          return []
-        }
-        throw error
-      }
-      return data || []
-    } catch (error) {
-      console.error('Error loading prospects from Supabase:', error)
-      return []
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
+    //       return []
+    //     }
+    //     throw error
+    //   }
+    //   return data || []
+    // } catch (error) {
+    //   console.error('Error loading prospects from Supabase:', error)
+    //   return []
+    // }
+    return []
   },
 
   async loadStrategyGoals() {
-    const supabase = await this.initialize()
-    if (!supabase) return null
+    // Disabled for now - using localStorage only
+    // const supabase = await this.initialize()
+    // if (!supabase) return null
 
-    try {
-      const { data, error } = await supabase
-        .from('strategy_goals')
-        .select('*')
-        .eq('id', 1)
-        .single()
+    // try {
+    //   const { data, error } = await supabase
+    //     .from('strategy_goals')
+    //     .select('*')
+    //     .eq('id', 1)
+    //     .single()
 
-      if (error) {
-        if (error.code === 'PGRST205') {
-          console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
-          return null
-        }
-        throw error
-      }
-      return data
-    } catch (error) {
-      console.error('Error loading strategy goals from Supabase:', error)
-      return null
-    }
+    //   if (error) {
+    //     if (error.code === 'PGRST205') {
+    //       console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
+    //       return null
+    //     }
+    //     throw error
+    //   }
+    //   return data
+    // } catch (error) {
+    //   console.error('Error loading strategy goals from Supabase:', error)
+    //   return null
+    // }
+    return null
   }
 };

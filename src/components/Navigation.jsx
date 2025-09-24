@@ -4,22 +4,30 @@ import { Link } from 'react-router-dom'
 const Navigation = () => {
   return (
     <nav style={{
-      backgroundColor: 'var(--card-bg)',
+      background: 'rgba(15, 23, 42, 0.95)',
+      backdropFilter: 'blur(10px)',
       padding: 'var(--spacing-4) 0',
-      boxShadow: 'var(--shadow-md)',
-      borderBottom: '1px solid rgba(148, 163, 184, 0.1)'
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      borderBottom: '1px solid rgba(148, 163, 184, 0.1)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 1000
     }}>
-      <div className="container">
+      <div className="container" style={{ maxWidth: '1600px', margin: '0 auto' }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
           <Link to="/" style={{
-            color: 'var(--text-primary)',
+            background: 'linear-gradient(135deg, #A855F7 0%, #60A5FA 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
             textDecoration: 'none',
             fontSize: 'var(--font-size-2xl)',
-            fontWeight: '700'
+            fontWeight: '800',
+            letterSpacing: '-0.01em'
           }}>
             THB Operations Hub
           </Link>
@@ -34,12 +42,20 @@ const Navigation = () => {
               style={{
                 color: 'var(--text-secondary)',
                 textDecoration: 'none',
-                padding: 'var(--spacing-2) var(--spacing-4)',
-                borderRadius: 'var(--radius-md)',
-                transition: 'background-color 0.2s ease'
+                padding: 'var(--spacing-3) var(--spacing-5)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease',
+                fontWeight: '500',
+                fontSize: 'var(--font-size-sm)'
               }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(148, 163, 184, 0.1)'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(168, 85, 247, 0.1)'
+                e.target.style.color = 'var(--primary-purple)'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent'
+                e.target.style.color = 'var(--text-secondary)'
+              }}
             >
               Dashboard
             </Link>

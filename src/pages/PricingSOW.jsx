@@ -6,6 +6,14 @@ const PricingSOW = () => {
     clientType: '',
     clientName: '',
     clientEmail: '',
+    // Client Context
+    clientContext: {
+      organizationType: '',
+      organizationMission: '',
+      teamSize: '',
+      techComfortLevel: '',
+      primaryGoal: ''
+    },
     // AI Opportunity Assessment
     aiAssessment: {
       contentCommunication: {
@@ -79,6 +87,36 @@ const PricingSOW = () => {
     }
   ]
 
+  // Client Context Options
+  const organizationTypes = [
+    { value: 'nonprofit-small', label: 'Nonprofit - Small' },
+    { value: 'nonprofit-medium', label: 'Nonprofit - Medium' },
+    { value: 'nonprofit-large', label: 'Nonprofit - Large' },
+    { value: 'small-business', label: 'Small Business' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  const teamSizes = [
+    { value: '1-5', label: '1-5 people' },
+    { value: '6-15', label: '6-15 people' },
+    { value: '16-50', label: '16-50 people' },
+    { value: '50+', label: '50+ people' }
+  ]
+
+  const techComfortLevels = [
+    { value: 'basic', label: 'Basic - Limited tech experience' },
+    { value: 'intermediate', label: 'Intermediate - Comfortable with common tools' },
+    { value: 'advanced', label: 'Advanced - Tech-savvy and adaptable' }
+  ]
+
+  const primaryGoals = [
+    { value: 'save-time', label: 'Save time on repetitive tasks' },
+    { value: 'improve-quality', label: 'Improve quality and consistency' },
+    { value: 'better-insights', label: 'Get better insights from data' },
+    { value: 'scale-operations', label: 'Scale operations efficiently' },
+    { value: 'other', label: 'Other' }
+  ]
+
   const clientTypes = [
     { value: 'nonprofit-small', label: 'Nonprofit - Small (< 50 employees)', multiplier: 0.8 },
     { value: 'nonprofit-medium', label: 'Nonprofit - Medium (50-200 employees)', multiplier: 0.9 },
@@ -117,6 +155,16 @@ const PricingSOW = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleClientContextChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      clientContext: {
+        ...prev.clientContext,
+        [field]: value
+      }
+    }))
   }
 
   const handleAIAssessmentChange = (categoryId, field, value) => {
@@ -170,6 +218,7 @@ const PricingSOW = () => {
         features: formData.features,
         timeline: formData.timeline,
         budget: formData.budgetRange,
+        clientContext: formData.clientContext,
         aiAssessment: formData.aiAssessment
       })
       
@@ -352,6 +401,139 @@ This SOW is valid for 30 days from the date of issue.
                     placeholder="client@example.com"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Client Context */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>
+                🏢 Client Context
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                Help us understand your organization to provide better recommendations and pricing.
+              </p>
+
+              {/* Organization Type */}
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                  Organization Type *
+                </label>
+                <select
+                  value={formData.clientContext.organizationType}
+                  onChange={(e) => handleClientContextChange('organizationType', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--font-size-sm)'
+                  }}
+                >
+                  <option value="">Select organization type</option>
+                  {organizationTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Organization Mission */}
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                  Organization Mission/Focus
+                </label>
+                <textarea
+                  value={formData.clientContext.organizationMission}
+                  onChange={(e) => handleClientContextChange('organizationMission', e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--font-size-sm)',
+                    resize: 'vertical'
+                  }}
+                  placeholder="Describe your organization's mission and focus areas..."
+                />
+              </div>
+
+              {/* Team Size and Tech Comfort */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-4)' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                    Team Size
+                  </label>
+                  <select
+                    value={formData.clientContext.teamSize}
+                    onChange={(e) => handleClientContextChange('teamSize', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: 'var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: 'var(--font-size-sm)'
+                    }}
+                  >
+                    <option value="">Select team size</option>
+                    {teamSizes.map(size => (
+                      <option key={size.value} value={size.value}>{size.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                    Tech Comfort Level
+                  </label>
+                  <select
+                    value={formData.clientContext.techComfortLevel}
+                    onChange={(e) => handleClientContextChange('techComfortLevel', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: 'var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: 'var(--font-size-sm)'
+                    }}
+                  >
+                    <option value="">Select comfort level</option>
+                    {techComfortLevels.map(level => (
+                      <option key={level.value} value={level.value}>{level.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Primary Goal */}
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                  Primary Goal for AI Project
+                </label>
+                <select
+                  value={formData.clientContext.primaryGoal}
+                  onChange={(e) => handleClientContextChange('primaryGoal', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    backgroundColor: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 'var(--font-size-sm)'
+                  }}
+                >
+                  <option value="">Select primary goal</option>
+                  {primaryGoals.map(goal => (
+                    <option key={goal.value} value={goal.value}>{goal.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

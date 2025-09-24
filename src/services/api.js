@@ -37,6 +37,15 @@ Project Details:
 - Timeline: ${projectData.timeline}
 - Budget: ${projectData.budget}
 
+Client Context:
+${projectData.clientContext ? `
+- Organization Type: ${projectData.clientContext.organizationType || 'Not specified'}
+- Organization Mission: ${projectData.clientContext.organizationMission || 'Not specified'}
+- Team Size: ${projectData.clientContext.teamSize || 'Not specified'}
+- Tech Comfort Level: ${projectData.clientContext.techComfortLevel || 'Not specified'}
+- Primary Goal: ${projectData.clientContext.primaryGoal || 'Not specified'}
+` : 'No client context provided'}
+
 AI Opportunity Assessment:
 ${projectData.aiAssessment ? Object.entries(projectData.aiAssessment).map(([category, data]) => {
   const categoryNames = {

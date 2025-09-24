@@ -37,12 +37,28 @@ Project Details:
 - Timeline: ${projectData.timeline}
 - Budget: ${projectData.budget}
 
+AI Opportunity Assessment:
+${projectData.aiAssessment ? Object.entries(projectData.aiAssessment).map(([category, data]) => {
+  const categoryNames = {
+    contentCommunication: 'Content & Communication',
+    dataAnalysis: 'Data & Analysis', 
+    processAutomation: 'Process Automation',
+    informationManagement: 'Information Management',
+    stakeholderEngagement: 'Stakeholder Engagement'
+  }
+  return `${categoryNames[category] || category}:
+- Current Activities: ${data.currentActivities || 'Not specified'}
+- Pain Points: ${data.painPoints || 'Not specified'}
+- Interested in AI: ${data.interested ? 'Yes' : 'No'}`
+}).join('\n\n') : 'No assessment data provided'}
+
 Please respond with a JSON object containing:
 {
   "complexity": number (1-10),
   "pricing": "range string",
   "timeline": "estimate string",
-  "recommendations": ["array", "of", "recommendations"]
+  "recommendations": ["array", "of", "recommendations"],
+  "aiOpportunities": ["array", "of", "identified", "ai", "opportunities"]
 }`
           }]
         })

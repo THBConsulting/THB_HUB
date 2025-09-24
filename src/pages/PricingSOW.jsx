@@ -4,18 +4,80 @@ import { claudeAPI, supabaseService } from '../services/api'
 const PricingSOW = () => {
   const [formData, setFormData] = useState({
     clientType: '',
+    clientName: '',
+    clientEmail: '',
+    // AI Opportunity Assessment
+    aiAssessment: {
+      contentCommunication: {
+        currentActivities: '',
+        painPoints: '',
+        interested: false
+      },
+      dataAnalysis: {
+        currentActivities: '',
+        painPoints: '',
+        interested: false
+      },
+      processAutomation: {
+        currentActivities: '',
+        painPoints: '',
+        interested: false
+      },
+      informationManagement: {
+        currentActivities: '',
+        painPoints: '',
+        interested: false
+      },
+      stakeholderEngagement: {
+        currentActivities: '',
+        painPoints: '',
+        interested: false
+      }
+    },
     projectDescription: '',
     features: [],
     timeline: '',
-    budgetRange: '',
-    clientName: '',
-    clientEmail: ''
+    budgetRange: ''
   })
 
   const [analysis, setAnalysis] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [sowDocument, setSowDocument] = useState('')
   const [isGeneratingSOW, setIsGeneratingSOW] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState({})
+
+  const aiAssessmentCategories = [
+    {
+      id: 'contentCommunication',
+      title: 'Content & Communication',
+      description: 'Reports, emails, presentations, social media, newsletters',
+      icon: '📝'
+    },
+    {
+      id: 'dataAnalysis',
+      title: 'Data & Analysis',
+      description: 'Surveys, feedback collection, research, data visualization',
+      icon: '📊'
+    },
+    {
+      id: 'processAutomation',
+      title: 'Process Automation',
+      description: 'Repetitive tasks, approvals, scheduling, workflows',
+      icon: '⚙️'
+    },
+    {
+      id: 'informationManagement',
+      title: 'Information Management',
+      description: 'Document creation, knowledge bases, search, file organization',
+      icon: '📚'
+    },
+    {
+      id: 'stakeholderEngagement',
+      title: 'Stakeholder Engagement',
+      description: 'Forms, dashboards, communication hubs, member portals',
+      icon: '🤝'
+    }
+  ]
 
   const clientTypes = [
     { value: 'nonprofit-small', label: 'Nonprofit - Small (< 50 employees)', multiplier: 0.8 },
@@ -57,6 +119,37 @@ const PricingSOW = () => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleAIAssessmentChange = (categoryId, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      aiAssessment: {
+        ...prev.aiAssessment,
+        [categoryId]: {
+          ...prev.aiAssessment[categoryId],
+          [field]: value
+        }
+      }
+    }))
+  }
+
+  const toggleCategoryExpansion = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }))
+  }
+
+  const getAssessmentProgress = () => {
+    const totalCategories = aiAssessmentCategories.length
+    const completedCategories = aiAssessmentCategories.filter(category => {
+      const assessment = formData.aiAssessment[category.id]
+      return assessment.currentActivities.trim() !== '' || 
+             assessment.painPoints.trim() !== '' || 
+             assessment.interested
+    }).length
+    return Math.round((completedCategories / totalCategories) * 100)
+  }
+
   const handleFeatureToggle = (feature) => {
     setFormData(prev => ({
       ...prev,
@@ -76,7 +169,8 @@ const PricingSOW = () => {
         description: formData.projectDescription,
         features: formData.features,
         timeline: formData.timeline,
-        budget: formData.budgetRange
+        budget: formData.budgetRange,
+        aiAssessment: formData.aiAssessment
       })
       
       // Convert Claude response to our format
@@ -91,6 +185,7 @@ const PricingSOW = () => {
         pricingRange: { min: minPrice, max: maxPrice, recommended },
         timeline: analysisResult.timeline,
         recommendations: analysisResult.recommendations,
+        aiOpportunities: analysisResult.aiOpportunities || [],
         sowGenerated: true
       }
       
@@ -285,6 +380,182 @@ This SOW is valid for 30 days from the date of issue.
               </select>
             </div>
 
+            {/* AI Opportunity Assessment */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-4)' }}>
+                <h3 className="text-lg font-semibold" style={{ color: 'var(--white)' }}>
+                  🤖 AI Opportunity Assessment
+                </h3>
+                <div style={{
+                  backgroundColor: 'var(--primary-purple)',
+                  color: 'var(--white)',
+                  padding: 'var(--spacing-2) var(--spacing-3)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  fontWeight: '600'
+                }}>
+                  {getAssessmentProgress()}% Complete
+                </div>
+              </div>
+              
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                Help us identify AI opportunities across your organization through guided discovery questions.
+              </p>
+
+              {aiAssessmentCategories.map((category) => {
+                const assessment = formData.aiAssessment[category.id]
+                const isExpanded = expandedCategories[category.id]
+                const isComplete = assessment.currentActivities.trim() !== '' || 
+                                 assessment.painPoints.trim() !== '' || 
+                                 assessment.interested
+
+                return (
+                  <div key={category.id} style={{
+                    marginBottom: 'var(--spacing-4)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden'
+                  }}>
+                    <div
+                      onClick={() => toggleCategoryExpansion(category.id)}
+                      style={{
+                        padding: 'var(--spacing-4)',
+                        backgroundColor: isComplete ? 'rgba(168, 85, 247, 0.1)' : 'rgba(148, 163, 184, 0.05)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.2)' : 'none'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
+                        <div>
+                          <h4 style={{ 
+                            fontSize: 'var(--font-size-base)', 
+                            fontWeight: '600', 
+                            color: 'var(--white)',
+                            margin: '0 0 var(--spacing-1) 0'
+                          }}>
+                            {category.title}
+                          </h4>
+                          <p style={{ 
+                            fontSize: 'var(--font-size-sm)', 
+                            color: 'var(--text-secondary)',
+                            margin: '0'
+                          }}>
+                            {category.description}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                        {isComplete && (
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: 'var(--primary-purple)'
+                          }} />
+                        )}
+                        <span style={{ 
+                          fontSize: 'var(--font-size-lg)',
+                          color: 'var(--text-secondary)',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease'
+                        }}>
+                          ▼
+                        </span>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div style={{ padding: 'var(--spacing-4)' }}>
+                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                          <label style={{ 
+                            display: 'block', 
+                            marginBottom: 'var(--spacing-2)', 
+                            color: 'var(--text-secondary)',
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: '500'
+                          }}>
+                            Current activities in this area
+                          </label>
+                          <textarea
+                            value={assessment.currentActivities}
+                            onChange={(e) => handleAIAssessmentChange(category.id, 'currentActivities', e.target.value)}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: 'var(--spacing-3)',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid rgba(148, 163, 184, 0.3)',
+                              backgroundColor: 'var(--card-bg)',
+                              color: 'var(--text-primary)',
+                              fontSize: 'var(--font-size-sm)',
+                              resize: 'vertical'
+                            }}
+                            placeholder="Describe your current activities in this area..."
+                          />
+                        </div>
+
+                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                          <label style={{ 
+                            display: 'block', 
+                            marginBottom: 'var(--spacing-2)', 
+                            color: 'var(--text-secondary)',
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: '500'
+                          }}>
+                            Pain points and challenges
+                          </label>
+                          <textarea
+                            value={assessment.painPoints}
+                            onChange={(e) => handleAIAssessmentChange(category.id, 'painPoints', e.target.value)}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: 'var(--spacing-3)',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid rgba(148, 163, 184, 0.3)',
+                              backgroundColor: 'var(--card-bg)',
+                              color: 'var(--text-primary)',
+                              fontSize: 'var(--font-size-sm)',
+                              resize: 'vertical'
+                            }}
+                            placeholder="What challenges or pain points do you face in this area?"
+                          />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                          <input
+                            type="checkbox"
+                            id={`${category.id}-interested`}
+                            checked={assessment.interested}
+                            onChange={(e) => handleAIAssessmentChange(category.id, 'interested', e.target.checked)}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              accentColor: 'var(--primary-purple)'
+                            }}
+                          />
+                          <label 
+                            htmlFor={`${category.id}-interested`}
+                            style={{ 
+                              color: 'var(--text-secondary)',
+                              fontSize: 'var(--font-size-sm)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Interested in AI solutions for this area
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
             {/* Project Description */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>
               <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
@@ -476,6 +747,56 @@ This SOW is valid for 30 days from the date of issue.
                     <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Estimated Duration</p>
                   </div>
                 </div>
+
+                {/* AI Opportunities */}
+                {analysis.aiOpportunities && analysis.aiOpportunities.length > 0 && (
+                  <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                    <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>🤖 Identified AI Opportunities</h3>
+                    <div style={{
+                      backgroundColor: 'var(--dark-black)',
+                      padding: 'var(--spacing-4)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid rgba(148, 163, 184, 0.2)'
+                    }}>
+                      <ul style={{ margin: 0, paddingLeft: 'var(--spacing-4)' }}>
+                        {analysis.aiOpportunities.map((opportunity, index) => (
+                          <li key={index} style={{ 
+                            color: 'var(--text-primary)', 
+                            marginBottom: 'var(--spacing-2)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}>
+                            {opportunity}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {analysis.recommendations && analysis.recommendations.length > 0 && (
+                  <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                    <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>💡 Recommendations</h3>
+                    <div style={{
+                      backgroundColor: 'var(--dark-black)',
+                      padding: 'var(--spacing-4)',
+                      borderRadius: 'var(--radius-lg)',
+                      border: '1px solid rgba(148, 163, 184, 0.2)'
+                    }}>
+                      <ul style={{ margin: 0, paddingLeft: 'var(--spacing-4)' }}>
+                        {analysis.recommendations.map((recommendation, index) => (
+                          <li key={index} style={{ 
+                            color: 'var(--text-primary)', 
+                            marginBottom: 'var(--spacing-2)',
+                            fontSize: 'var(--font-size-sm)'
+                          }}>
+                            {recommendation}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
 
                 {/* SOW Generation */}
                 <div>

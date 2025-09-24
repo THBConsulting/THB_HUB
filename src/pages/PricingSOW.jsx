@@ -59,6 +59,13 @@ const PricingSOW = () => {
   const [isAnalyzingFeasibility, setIsAnalyzingFeasibility] = useState(false)
   const [excludedAreas, setExcludedAreas] = useState([])
   const [expandedFeasibility, setExpandedFeasibility] = useState({})
+  
+  // Client Document State
+  const [clientDocument, setClientDocument] = useState(null)
+  const [isGeneratingDocument, setIsGeneratingDocument] = useState(false)
+  const [documentSections, setDocumentSections] = useState([])
+  const [isEditingDocument, setIsEditingDocument] = useState(false)
+  const [isPreviewMode, setIsPreviewMode] = useState(false)
 
   const aiAssessmentCategories = [
     {
@@ -272,6 +279,152 @@ const PricingSOW = () => {
       case 'low': return '#EF4444' // Red
       default: return '#6B7280' // Gray
     }
+  }
+
+  const generateClientDocument = async () => {
+    setIsGeneratingDocument(true)
+    
+    try {
+      // Get included areas only
+      const includedAreas = feasibilityAnalysis.areas.filter(area => 
+        !excludedAreas.includes(area.areaName)
+      )
+
+      if (includedAreas.length === 0) {
+        alert('Please include at least one opportunity area in your project scope.')
+        setIsGeneratingDocument(false)
+        return
+      }
+
+      // Prepare data for document generation
+      const documentData = {
+        clientContext: formData.clientContext,
+        includedAreas: includedAreas,
+        organizationType: formData.clientContext.organizationType,
+        teamSize: formData.clientContext.teamSize,
+        techComfortLevel: formData.clientContext.techComfortLevel,
+        primaryGoal: formData.clientContext.primaryGoal
+      }
+
+      // Use OpenAI API for document generation
+      const documentResult = await openAIAPI.generateClientDocument(documentData)
+      
+      // Parse and structure the document sections
+      const sections = [
+        {
+          id: 'executive-summary',
+          title: 'Executive Summary',
+          content: documentResult.executiveSummary || 'Executive summary will be generated here.',
+          editable: true
+        },
+        {
+          id: 'recommended-solutions',
+          title: 'Recommended AI Solutions',
+          content: documentResult.recommendedSolutions || 'Recommended solutions will be generated here.',
+          editable: true
+        },
+        {
+          id: 'solution-examples',
+          title: 'What Each Solution Will Look Like',
+          content: documentResult.solutionExamples || 'Solution examples will be generated here.',
+          editable: true
+        },
+        {
+          id: 'client-role',
+          title: 'Your Role & Time Investment',
+          content: documentResult.clientRole || 'Client role and responsibilities will be outlined here.',
+          editable: true
+        },
+        {
+          id: 'timeline',
+          title: 'Timeline Expectations',
+          content: documentResult.timeline || 'Timeline expectations will be provided here.',
+          editable: true
+        },
+        {
+          id: 'next-steps',
+          title: 'Next Steps',
+          content: documentResult.nextSteps || 'Next steps will be outlined here.',
+          editable: true
+        }
+      ]
+
+      setDocumentSections(sections)
+      setClientDocument(documentResult)
+      setIsEditingDocument(true)
+      
+    } catch (error) {
+      console.error('Document generation failed:', error)
+      alert('Failed to generate client document. Please try again.')
+    }
+    
+    setIsGeneratingDocument(false)
+  }
+
+  const updateDocumentSection = (sectionId, content) => {
+    setDocumentSections(prev => prev.map(section => 
+      section.id === sectionId ? { ...section, content } : section
+    ))
+  }
+
+  const addDocumentSection = () => {
+    const newSection = {
+      id: `section-${Date.now()}`,
+      title: 'New Section',
+      content: 'Add your content here...',
+      editable: true
+    }
+    setDocumentSections(prev => [...prev, newSection])
+  }
+
+  const removeDocumentSection = (sectionId) => {
+    setDocumentSections(prev => prev.filter(section => section.id !== sectionId))
+  }
+
+  const saveDocumentDraft = () => {
+    // Save to localStorage for now (could be enhanced with Supabase)
+    const draft = {
+      sections: documentSections,
+      timestamp: new Date().toISOString(),
+      clientName: formData.clientName
+    }
+    localStorage.setItem('clientDocumentDraft', JSON.stringify(draft))
+    alert('Document draft saved successfully!')
+  }
+
+  const exportToPDF = () => {
+    // Simple PDF export using browser print functionality
+    const printWindow = window.open('', '_blank')
+    const documentContent = documentSections.map(section => 
+      `<h2>${section.title}</h2><div>${section.content.replace(/\n/g, '<br>')}</div>`
+    ).join('<br><br>')
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>What's Possible & Your Role - ${formData.clientName || 'Client'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h2 { color: #6B46C1; border-bottom: 2px solid #6B46C1; padding-bottom: 10px; }
+            .header { text-align: center; margin-bottom: 40px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>What's Possible & Your Role</h1>
+            <p><strong>Client:</strong> ${formData.clientName || 'Client'}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          ${documentContent}
+          <div class="footer">
+            <p>Generated by THB Operations Hub</p>
+          </div>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
   }
 
   const handleFeatureToggle = (feature) => {
@@ -1003,6 +1156,201 @@ This SOW is valid for 30 days from the date of issue.
                     </div>
                   )
                 })}
+              </div>
+            )}
+
+            {/* Generate Client Document Button */}
+            {feasibilityAnalysis && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <button
+                  onClick={generateClientDocument}
+                  disabled={isGeneratingDocument || excludedAreas.length === feasibilityAnalysis.areas.length}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--primary-purple)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-lg)',
+                    fontWeight: '600',
+                    cursor: isGeneratingDocument ? 'not-allowed' : 'pointer',
+                    opacity: (isGeneratingDocument || excludedAreas.length === feasibilityAnalysis.areas.length) ? 0.6 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isGeneratingDocument ? '📝 Generating Document...' : '📄 Generate Client Document'}
+                </button>
+              </div>
+            )}
+
+            {/* Client Document Editor */}
+            {isEditingDocument && documentSections.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-4)' }}>
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--white)' }}>
+                    📄 What's Possible & Your Role
+                  </h3>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                    <button
+                      onClick={() => setIsPreviewMode(!isPreviewMode)}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: isPreviewMode ? 'var(--secondary-blue)' : 'transparent',
+                        color: isPreviewMode ? 'var(--white)' : 'var(--text-secondary)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isPreviewMode ? 'Edit' : 'Preview'}
+                    </button>
+                    <button
+                      onClick={saveDocumentDraft}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Save Draft
+                    </button>
+                    <button
+                      onClick={exportToPDF}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: 'var(--primary-purple)',
+                        color: 'var(--white)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                  AI-generated client education document. Edit each section before sharing with your client.
+                </p>
+
+                {documentSections.map((section, index) => (
+                  <div key={section.id} style={{
+                    marginBottom: 'var(--spacing-4)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      padding: 'var(--spacing-4)',
+                      backgroundColor: 'rgba(148, 163, 184, 0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <h4 style={{ 
+                        fontSize: 'var(--font-size-base)', 
+                        fontWeight: '600', 
+                        color: 'var(--white)',
+                        margin: '0'
+                      }}>
+                        {section.title}
+                      </h4>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                        <button
+                          onClick={() => {
+                            const newTitle = prompt('Enter new section title:', section.title)
+                            if (newTitle) {
+                              setDocumentSections(prev => prev.map(s => 
+                                s.id === section.id ? { ...s, title: newTitle } : s
+                              ))
+                            }
+                          }}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-2)',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Rename
+                        </button>
+                        <button
+                          onClick={() => removeDocumentSection(section.id)}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-2)',
+                            backgroundColor: 'transparent',
+                            color: '#EF4444',
+                            border: '1px solid #EF4444',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: 'var(--spacing-4)' }}>
+                      {isPreviewMode ? (
+                        <div style={{
+                          fontSize: 'var(--font-size-sm)',
+                          color: 'var(--text-primary)',
+                          lineHeight: '1.6',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {section.content}
+                        </div>
+                      ) : (
+                        <textarea
+                          value={section.content}
+                          onChange={(e) => updateDocumentSection(section.id, e.target.value)}
+                          rows={6}
+                          style={{
+                            width: '100%',
+                            padding: 'var(--spacing-3)',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            backgroundColor: 'var(--card-bg)',
+                            color: 'var(--text-primary)',
+                            fontSize: 'var(--font-size-sm)',
+                            resize: 'vertical',
+                            lineHeight: '1.5'
+                          }}
+                          placeholder="Enter section content..."
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--spacing-4)' }}>
+                  <button
+                    onClick={addDocumentSection}
+                    style={{
+                      padding: 'var(--spacing-2) var(--spacing-4)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--primary-purple)',
+                      border: '1px solid var(--primary-purple)',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: 'var(--font-size-sm)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Add Section
+                  </button>
+                </div>
               </div>
             )}
 

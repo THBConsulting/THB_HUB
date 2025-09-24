@@ -382,6 +382,90 @@ Consider factors like:
         ]
       }))
     };
+  },
+
+  async generateClientDocument(documentData) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('OpenAI API key not found');
+      return this.generateFallbackClientDocument(documentData);
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{
+            role: 'user',
+            content: `Generate a professional client-facing document explaining AI automation opportunities in plain language. This document should educate the client about what's possible and their role in the project.
+
+Organization Context:
+- Organization Type: ${documentData.organizationType || 'Not specified'}
+- Team Size: ${documentData.teamSize || 'Not specified'}
+- Tech Comfort Level: ${documentData.techComfortLevel || 'Not specified'}
+- Primary Goal: ${documentData.primaryGoal || 'Not specified'}
+
+Included Opportunity Areas:
+${documentData.includedAreas.map(area => `
+- ${area.areaName}: ${area.feasibility} feasibility, ${area.complexity} complexity
+  Explanation: ${area.explanation}
+  Recommendations: ${area.recommendations.join(', ')}
+`).join('\n')}
+
+Generate a JSON response with these sections:
+{
+  "executiveSummary": "Brief overview of the AI automation project and its benefits",
+  "recommendedSolutions": "Detailed explanation of recommended AI solutions based on feasibility analysis",
+  "solutionExamples": "Realistic examples of what each solution will look like in practice",
+  "clientRole": "Clear explanation of the client's 20% responsibilities and time investment",
+  "timeline": "Realistic timeline expectations for implementation",
+  "nextSteps": "Specific next steps for moving forward with the project"
+}
+
+Write in a professional but accessible tone. Focus on:
+- Plain language explanations
+- Realistic expectations
+- Clear client responsibilities
+- Practical examples
+- Actionable next steps`
+          }],
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        return this.generateFallbackClientDocument(documentData);
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return this.generateFallbackClientDocument(documentData);
+    }
+  },
+
+  generateFallbackClientDocument(documentData) {
+    return {
+      executiveSummary: `Based on your organization's profile and the feasibility analysis, we've identified several AI automation opportunities that can help you ${documentData.primaryGoal || 'achieve your goals'}. This document outlines what's possible and your role in making these solutions successful.`,
+      recommendedSolutions: `We recommend focusing on ${documentData.includedAreas.map(area => area.areaName).join(', ')} based on your organization's size, tech comfort level, and current pain points. These solutions offer the best balance of impact and feasibility for your team.`,
+      solutionExamples: `Each solution will be tailored to your specific needs. For example, content automation might include automated report generation, while process automation could streamline your approval workflows. We'll provide detailed examples during the project kickoff.`,
+      clientRole: `Your role involves approximately 20% of the total effort, including providing feedback, testing solutions, and ensuring team adoption. This typically means 2-4 hours per week during implementation and ongoing support for your team.`,
+      timeline: `Implementation typically takes 6-12 weeks depending on complexity. We'll start with the highest-impact, lowest-complexity solutions and build from there. Regular check-ins ensure we stay on track.`,
+      nextSteps: `Next steps include: 1) Review and approve this document, 2) Schedule a project kickoff meeting, 3) Begin with the first solution implementation, 4) Regular progress reviews and adjustments as needed.`
+    };
   }
 };
 

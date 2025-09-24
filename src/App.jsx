@@ -1,5 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { SharedDataProvider } from './contexts/SharedDataContext'
 import Dashboard from './pages/Dashboard'
 
 // Import module pages
@@ -13,20 +14,22 @@ import CalendarOverview from './pages/CalendarOverview'
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/pricing-sow" element={<Dashboard />} />
-          <Route path="/project-pipeline" element={<Dashboard />} />
-          <Route path="/business-strategy" element={<Dashboard />} />
-          <Route path="/monthly-expenses" element={<Dashboard />} />
-          <Route path="/speaking-opportunities" element={<Dashboard />} />
-          <Route path="/ai-tools-research" element={<Dashboard />} />
-          <Route path="/calendar-overview" element={<Dashboard />} />
-        </Routes>
-      </div>
-    </Router>
+    <SharedDataProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/pricing-sow" element={<Dashboard />} />
+            <Route path="/project-pipeline" element={<Dashboard />} />
+            <Route path="/business-strategy" element={<Dashboard />} />
+            <Route path="/monthly-expenses" element={<Dashboard />} />
+            <Route path="/speaking-opportunities" element={<Dashboard />} />
+            <Route path="/ai-tools-research" element={<Dashboard />} />
+            <Route path="/calendar-overview" element={<Dashboard />} />
+          </Routes>
+        </div>
+      </Router>
+    </SharedDataProvider>
   )
 }
 

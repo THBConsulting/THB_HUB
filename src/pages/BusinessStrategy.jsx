@@ -1,25 +1,38 @@
 import React, { useState, useEffect } from 'react'
 import { openAIAPI } from '../services/api'
+import { useSharedData } from '../contexts/SharedDataContext'
 
 const BusinessStrategy = () => {
+  const { 
+    projects, 
+    strategyGoals, 
+    setStrategyGoals, 
+    projectMetrics, 
+    strategyScenarios 
+  } = useSharedData()
+
   // Simplified state management
   const [currentStep, setCurrentStep] = useState(1)
   const [strategyModel, setStrategyModel] = useState({
-    revenueTarget: 100000,
-    selectedScenario: 'balanced',
+    revenueTarget: strategyGoals.revenueTarget,
+    selectedScenario: strategyGoals.selectedScenario,
     capacity: {
-      weeklyHours: 40,
-      maxConcurrentProjects: 4
-    },
-    clientMix: {
-      nonprofit: 60,
-      smallBusiness: 35,
-      enterprise: 5
+      weeklyHours: strategyGoals.capacity.weeklyHours,
+      maxConcurrentProjects: strategyGoals.capacity.maxConcurrentProjects
     }
   })
 
   const [aiAnalysis, setAiAnalysis] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  // Update shared strategy goals when local state changes
+  useEffect(() => {
+    setStrategyGoals({
+      revenueTarget: strategyModel.revenueTarget,
+      selectedScenario: strategyModel.selectedScenario,
+      capacity: strategyModel.capacity
+    })
+  }, [strategyModel, setStrategyGoals])
 
   // Simplified scenarios with clear explanations
   const scenarios = {
@@ -127,19 +140,30 @@ const BusinessStrategy = () => {
       const analysisData = {
         strategyModel,
         metrics,
-        scenario: scenarios[strategyModel.selectedScenario]
+        scenario: scenarios[strategyModel.selectedScenario],
+        realProjectData: {
+          totalProjects: projects.length,
+          activeProjects: projectMetrics.activeProjects,
+          completedProjects: projectMetrics.completedProjects,
+          currentRevenue: projectMetrics.totalReceived,
+          tierBreakdown: {
+            tier1: projectMetrics.tier1Projects,
+            tier2: projectMetrics.tier2Projects,
+            tier3: projectMetrics.tier3Projects
+          }
+        }
       }
 
       const analysis = await openAIAPI.analyzeBusinessStrategy(analysisData)
       setAiAnalysis(analysis)
     } catch (error) {
       console.error('Strategy analysis failed:', error)
-      // Fallback analysis
+      // Fallback analysis with real data
       setAiAnalysis({
         feasibilityScore: 7,
         feasibilityExplanation: 'Strategy appears feasible with current capacity constraints.',
         timeCommitment: `Estimated ${metrics.weeklyHoursNeeded.toFixed(0)} hours per week required for project delivery.`,
-        marketReality: `Need to maintain ${metrics.prospectsNeeded} active prospects in pipeline.`,
+        marketReality: `Need to maintain ${metrics.prospectsNeeded} active prospects in pipeline. Currently have ${projects.length} projects in pipeline.`,
         riskAssessment: 'Moderate risk due to client concentration. Consider diversifying client base.',
         growthPotential: 'Good scalability potential with platform approach.',
         recommendations: [
@@ -689,6 +713,86 @@ const BusinessStrategy = () => {
           </div>
         </div>
 
+        {/* Real-time Project Data */}
+        {projects.length > 0 && (
+          <div className="card" style={{ marginBottom: 'var(--spacing-8)' }}>
+            <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
+              📊 Current Project Pipeline Data
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                  Total Projects
+                </div>
+                <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                  {projects.length}
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {projectMetrics.activeProjects} active
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                  Revenue Received
+                </div>
+                <div style={{ color: '#10B981', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                  ${projectMetrics.totalReceived.toLocaleString()}
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {((projectMetrics.totalReceived / strategyModel.revenueTarget) * 100).toFixed(1)}% of target
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                  Project Mix
+                </div>
+                <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                  T1: {projectMetrics.tier1Projects} | T2: {projectMetrics.tier2Projects} | T3: {projectMetrics.tier3Projects}
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  Current vs Target
+                </div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                  Capacity Usage
+                </div>
+                <div style={{ color: projectMetrics.projectCountProgress > 100 ? '#EF4444' : '#10B981', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                  {projectMetrics.projectCountProgress.toFixed(0)}%
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {projects.length} / {strategyModel.capacity.maxConcurrentProjects} max
+                </div>
+              </div>
+            </div>
+            
+            <div style={{
+              backgroundColor: 'var(--dark-black)',
+              padding: 'var(--spacing-4)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid rgba(148, 163, 184, 0.2)'
+            }}>
+              <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-base)', fontWeight: '600', marginBottom: 'var(--spacing-2)' }}>
+                💡 Strategic Insight
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', lineHeight: '1.5' }}>
+                {projects.length === 0 ? 
+                  'No projects yet. Add your first project to start tracking progress toward your strategic goals.' :
+                  projectMetrics.totalReceived >= strategyModel.revenueTarget * 0.8 ?
+                    'Great progress! You\'re on track to meet your revenue target.' :
+                    projectMetrics.projectCountProgress > 100 ?
+                      'You\'re exceeding your capacity limits. Consider adjusting your strategy or capacity.' :
+                      'Good foundation! Focus on converting more projects to meet your revenue goals.'
+                }
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Step content */}
         {currentStep === 1 && <Step1_RevenueTarget />}
         {currentStep === 2 && <Step2_StrategySelection />}
@@ -705,6 +809,9 @@ const BusinessStrategy = () => {
                 <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
                   ${strategyModel.revenueTarget.toLocaleString()}
                 </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {projects.length > 0 && `${((projectMetrics.totalReceived / strategyModel.revenueTarget) * 100).toFixed(1)}% achieved`}
+                </div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Strategy</div>
@@ -717,11 +824,17 @@ const BusinessStrategy = () => {
                 <div style={{ color: '#10B981', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
                   ${metrics.totalRevenue.toLocaleString()}
                 </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {projects.length > 0 && `Current: $${projectMetrics.totalReceived.toLocaleString()}`}
+                </div>
               </div>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Hours/Week</div>
                 <div style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
                   {metrics.weeklyHoursNeeded.toFixed(0)}h
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                  {projects.length > 0 && `${projects.length} projects`}
                 </div>
               </div>
             </div>

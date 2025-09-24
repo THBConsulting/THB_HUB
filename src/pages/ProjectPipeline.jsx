@@ -1,8 +1,20 @@
 import React, { useState } from 'react'
+import { useSharedData } from '../contexts/SharedDataContext'
 
 const ProjectPipeline = () => {
+  const { 
+    projects, 
+    setProjects, 
+    strategyGoals, 
+    projectMetrics, 
+    strategyScenarios,
+    addProject,
+    updateProject,
+    deleteProject
+  } = useSharedData()
+
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'list'
-  const [projects, setProjects] = useState([])
+  const [showAddForm, setShowAddForm] = useState(false)
 
   const [newProject, setNewProject] = useState({
     clientName: '',
@@ -14,8 +26,6 @@ const ProjectPipeline = () => {
     notes: ''
   })
 
-  const [showAddForm, setShowAddForm] = useState(false)
-
   const statusConfig = {
     discovery: { label: 'Discovery', color: '#F59E0B', bgColor: 'rgba(245, 158, 11, 0.1)' },
     proposal: { label: 'Proposal Sent', color: '#3B82F6', bgColor: 'rgba(59, 130, 246, 0.1)' },
@@ -24,29 +34,11 @@ const ProjectPipeline = () => {
   }
 
   const updateProjectStatus = (projectId, newStatus) => {
-    setProjects(prev => prev.map(project => 
-      project.id === projectId 
-        ? { ...project, status: newStatus }
-        : project
-    ))
+    updateProject(projectId, { status: newStatus })
   }
 
   const addNewProject = () => {
-    const project = {
-      id: Date.now(),
-      ...newProject,
-      status: 'discovery',
-      estimatedValue: parseFloat(newProject.estimatedValue),
-      depositAmount: parseFloat(newProject.estimatedValue) * 0.5,
-      depositReceived: false,
-      finalPaymentAmount: parseFloat(newProject.estimatedValue) * 0.5,
-      finalPaymentReceived: false,
-      proposalSentDate: null,
-      startDate: null,
-      completionDate: null,
-      createdAt: new Date().toISOString().split('T')[0]
-    }
-    setProjects(prev => [...prev, project])
+    addProject(newProject)
     setNewProject({
       clientName: '',
       clientEmail: '',
@@ -59,24 +51,24 @@ const ProjectPipeline = () => {
     setShowAddForm(false)
   }
 
-  const getRevenueSummary = () => {
-    const totalEstimated = projects.reduce((sum, p) => sum + p.estimatedValue, 0)
-    const depositsReceived = projects.reduce((sum, p) => sum + (p.depositReceived ? p.depositAmount : 0), 0)
-    const finalPaymentsReceived = projects.reduce((sum, p) => sum + (p.finalPaymentReceived ? p.finalPaymentAmount : 0), 0)
-    const pendingDeposits = projects.reduce((sum, p) => sum + (!p.depositReceived ? p.depositAmount : 0), 0)
-    const pendingFinalPayments = projects.reduce((sum, p) => sum + (!p.finalPaymentReceived && p.status === 'completed' ? p.finalPaymentAmount : 0), 0)
+  // Get current strategy scenario targets
+  const currentScenario = strategyScenarios[strategyGoals.selectedScenario]
+  
+  // Calculate progress toward strategic goals
+  const getStrategicProgress = () => {
+    const tier1Progress = (projectMetrics.tier1Projects / currentScenario.targetTier1) * 100
+    const tier2Progress = (projectMetrics.tier2Projects / currentScenario.targetTier2) * 100
+    const tier3Progress = (projectMetrics.tier3Projects / currentScenario.targetTier3) * 100
     
     return {
-      totalEstimated,
-      depositsReceived,
-      finalPaymentsReceived,
-      pendingDeposits,
-      pendingFinalPayments,
-      totalReceived: depositsReceived + finalPaymentsReceived
+      tier1Progress: Math.min(tier1Progress, 100),
+      tier2Progress: Math.min(tier2Progress, 100),
+      tier3Progress: Math.min(tier3Progress, 100),
+      revenueProgress: projectMetrics.revenueProgress
     }
   }
 
-  const revenue = getRevenueSummary()
+  const strategicProgress = getStrategicProgress()
 
   const ProjectCard = ({ project }) => (
     <div className="card" style={{ marginBottom: 'var(--spacing-4)', cursor: 'pointer' }}>
@@ -171,6 +163,87 @@ const ProjectPipeline = () => {
         <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--white)' }}>
           📈 Project Pipeline
         </h1>
+
+        {/* Strategic Goal Tracking */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-8)' }}>
+          <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
+            🎯 Progress Toward Strategic Goals
+          </h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                Revenue Progress
+              </div>
+              <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                {strategicProgress.revenueProgress.toFixed(1)}%
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                ${projectMetrics.totalReceived.toLocaleString()} / ${strategyGoals.revenueTarget.toLocaleString()}
+              </div>
+            </div>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                Tier 1 Projects
+              </div>
+              <div style={{ color: '#F59E0B', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                {strategicProgress.tier1Progress.toFixed(1)}%
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                {projectMetrics.tier1Projects} / {currentScenario.targetTier1}
+              </div>
+            </div>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                Tier 2 Projects
+              </div>
+              <div style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                {strategicProgress.tier2Progress.toFixed(1)}%
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                {projectMetrics.tier2Projects} / {currentScenario.targetTier2}
+              </div>
+            </div>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                Tier 3 Projects
+              </div>
+              <div style={{ color: '#10B981', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                {strategicProgress.tier3Progress.toFixed(1)}%
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                {projectMetrics.tier3Projects} / {currentScenario.targetTier3}
+              </div>
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: 'var(--dark-black)',
+            padding: 'var(--spacing-4)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid rgba(148, 163, 184, 0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-lg)', fontWeight: '600', marginBottom: 'var(--spacing-1)' }}>
+                  Current Strategy: {currentScenario.name}
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                  {projects.length} total projects • {projectMetrics.activeProjects} active • {projectMetrics.completedProjects} completed
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Capacity Usage</div>
+                <div style={{ color: projectMetrics.projectCountProgress > 100 ? '#EF4444' : '#10B981', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                  {projectMetrics.projectCountProgress.toFixed(0)}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Revenue Summary */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-8)' }}>

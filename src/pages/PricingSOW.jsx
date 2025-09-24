@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { claudeAPI, supabaseService } from '../services/api'
 
 const PricingSOW = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ const PricingSOW = () => {
 
   const [analysis, setAnalysis] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [sowDocument, setSowDocument] = useState('')
+  const [isGeneratingSOW, setIsGeneratingSOW] = useState(false)
 
   const clientTypes = [
     { value: 'nonprofit-small', label: 'Nonprofit - Small (< 50 employees)', multiplier: 0.8 },
@@ -63,11 +66,48 @@ const PricingSOW = () => {
     }))
   }
 
-  const simulateAIAnalysis = () => {
+  const simulateAIAnalysis = async () => {
     setIsAnalyzing(true)
     
-    // Simulate AI processing time
-    setTimeout(() => {
+    try {
+      // Use real Claude API for analysis
+      const analysisResult = await claudeAPI.analyzeProjectComplexity({
+        clientType: formData.clientType,
+        description: formData.projectDescription,
+        features: formData.features,
+        timeline: formData.timeline,
+        budget: formData.budgetRange
+      })
+      
+      // Convert Claude response to our format
+      const complexityScore = analysisResult.complexity
+      const pricingMatch = analysisResult.pricing.match(/\$([0-9,]+).*?\$([0-9,]+)/)
+      const minPrice = pricingMatch ? parseInt(pricingMatch[1].replace(',', '')) : 10000
+      const maxPrice = pricingMatch ? parseInt(pricingMatch[2].replace(',', '')) : 25000
+      const recommended = Math.round((minPrice + maxPrice) / 2)
+      
+      const analysisData = {
+        complexityScore,
+        pricingRange: { min: minPrice, max: maxPrice, recommended },
+        timeline: analysisResult.timeline,
+        recommendations: analysisResult.recommendations,
+        sowGenerated: true
+      }
+      
+      setAnalysis(analysisData)
+      
+      // Save project to Supabase
+      const projectData = {
+        ...formData,
+        analysis: analysisData,
+        created_at: new Date().toISOString()
+      }
+      
+      await supabaseService.saveProject(projectData)
+      
+    } catch (error) {
+      console.error('Analysis failed:', error)
+      // Fallback to simulated analysis
       const complexityScore = Math.floor(Math.random() * 5) + 5 // 5-10
       const basePrice = 15000 + (complexityScore * 2000)
       const clientMultiplier = clientTypes.find(ct => ct.value === formData.clientType)?.multiplier || 1.0
@@ -84,14 +124,27 @@ const PricingSOW = () => {
         complexityScore,
         pricingRange: { min: minPrice, max: maxPrice, recommended: finalPrice },
         timeline: estimatedWeeks,
+        recommendations: ['Custom automation workflow design', 'Integration with existing systems'],
         sowGenerated: true
       })
-      setIsAnalyzing(false)
-    }, 2000)
+    }
+    
+    setIsAnalyzing(false)
   }
 
-  const generateSOW = () => {
-    const sowContent = `
+  const generateSOW = async () => {
+    if (!analysis) return
+    
+    setIsGeneratingSOW(true)
+    
+    try {
+      // Use Claude API to generate SOW
+      const sowContent = await claudeAPI.generateSOW(formData, analysis)
+      setSowDocument(sowContent)
+    } catch (error) {
+      console.error('SOW generation failed:', error)
+      // Fallback to template-based SOW
+      const sowContent = `
 STATEMENT OF WORK
 THB Operations Hub - Custom Automation Project
 
@@ -140,17 +193,12 @@ TERMS
 • Change requests may affect timeline and budget
 
 This SOW is valid for 30 days from the date of issue.
-    `.trim()
-
-    const blob = new Blob([sowContent], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `SOW-${formData.clientName || 'Client'}-${new Date().toISOString().split('T')[0]}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+      `.trim()
+      
+      setSowDocument(sowContent)
+    }
+    
+    setIsGeneratingSOW(false)
   }
 
   return (

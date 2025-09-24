@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
+import { openAIAPI, supabaseService } from '../services/api'
 
 const ActionItems = () => {
   const [viewMode, setViewMode] = useState('all') // 'all', 'business', 'personal', 'overdue'
   const [priorityFilter, setPriorityFilter] = useState('all') // 'all', 'high', 'medium', 'low'
   const [showAddForm, setShowAddForm] = useState(false)
   const [showEmailIntegration, setShowEmailIntegration] = useState(false)
+  const [emailContent, setEmailContent] = useState('')
+  const [isExtractingTasks, setIsExtractingTasks] = useState(false)
   
   const [actionItems, setActionItems] = useState([
     {
@@ -219,7 +222,7 @@ const ActionItems = () => {
     }))
   }
 
-  const addActionItem = () => {
+  const addActionItem = async () => {
     if (!newActionItem.title || !newActionItem.dueDate) return
 
     const item = {
@@ -232,6 +235,10 @@ const ActionItems = () => {
     }
 
     setActionItems(prev => [...prev, item])
+    
+    // Save to Supabase
+    await supabaseService.saveActionItem(item)
+    
     setNewActionItem({
       title: '',
       description: '',
@@ -243,6 +250,53 @@ const ActionItems = () => {
       notes: ''
     })
     setShowAddForm(false)
+  }
+
+  const extractTasksFromEmail = async () => {
+    if (!emailContent.trim()) return
+    
+    setIsExtractingTasks(true)
+    
+    try {
+      // Use OpenAI API to extract action items
+      const extractedTasks = await openAIAPI.extractActionItems(emailContent)
+      
+      if (extractedTasks && extractedTasks.length > 0) {
+        const newTasks = extractedTasks.map((task, index) => ({
+          id: Date.now() + index,
+          title: task.task,
+          description: task.context || '',
+          category: task.category === 'personal' ? 'personal' : 'business',
+          priority: task.priority,
+          dueDate: task.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 1 week from now
+          status: 'pending',
+          emailSource: 'AI Extraction',
+          emailDate: new Date().toISOString().split('T')[0],
+          taskType: task.category === 'follow-up' ? 'follow-up' : 
+                   task.category === 'deadline' ? 'deadline' : 'meeting',
+          estimatedTime: '30 minutes',
+          notes: `Extracted from email content`,
+          createdAt: new Date().toISOString()
+        }))
+        
+        setActionItems(prev => [...prev, ...newTasks])
+        
+        // Save to Supabase
+        for (const task of newTasks) {
+          await supabaseService.saveActionItem(task)
+        }
+        
+        setEmailContent('')
+        setShowEmailIntegration(false)
+      } else {
+        alert('No action items found in the email content.')
+      }
+    } catch (error) {
+      console.error('Email extraction failed:', error)
+      alert('Failed to extract action items. Please try again or add manually.')
+    }
+    
+    setIsExtractingTasks(false)
   }
 
   const handleInputChange = (field, value) => {

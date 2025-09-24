@@ -5,6 +5,7 @@ import { useSharedData } from '../contexts/SharedDataContext'
 const BusinessStrategy = () => {
   const { 
     projects, 
+    prospects,
     strategyGoals, 
     setStrategyGoals, 
     projectMetrics, 
@@ -682,7 +683,85 @@ const BusinessStrategy = () => {
           🎯 Strategic Path Planning
         </h1>
 
-        {/* Progress indicator */}
+        {/* Workflow Indicator */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-8)' }}>
+          <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-4)', textAlign: 'center' }}>
+            📋 Your Strategic Workflow
+          </h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+            {/* Step 1: Strategy */}
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center', 
+              padding: 'var(--spacing-4)', 
+              backgroundColor: 'var(--primary-purple)', 
+              borderRadius: 'var(--radius-lg)',
+              marginRight: 'var(--spacing-2)'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)' }}>🎯</div>
+              <div style={{ color: 'var(--white)', fontWeight: 'bold', marginBottom: 'var(--spacing-1)' }}>
+                Step 1: Set Strategy
+              </div>
+              <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
+                Define revenue targets & growth path
+              </div>
+            </div>
+            
+            <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-lg)' }}>→</div>
+            
+            {/* Step 2: Pricing */}
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center', 
+              padding: 'var(--spacing-4)', 
+              backgroundColor: 'var(--secondary-blue)', 
+              borderRadius: 'var(--radius-lg)',
+              margin: '0 var(--spacing-2)'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)' }}>💰</div>
+              <div style={{ color: 'var(--white)', fontWeight: 'bold', marginBottom: 'var(--spacing-1)' }}>
+                Step 2: Generate Prospects
+              </div>
+              <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
+                Use pricing tool to create prospects
+              </div>
+            </div>
+            
+            <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-lg)' }}>→</div>
+            
+            {/* Step 3: Pipeline */}
+            <div style={{ 
+              flex: 1, 
+              textAlign: 'center', 
+              padding: 'var(--spacing-4)', 
+              backgroundColor: '#10B981', 
+              borderRadius: 'var(--radius-lg)',
+              marginLeft: 'var(--spacing-2)'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: 'var(--spacing-2)' }}>📈</div>
+              <div style={{ color: 'var(--white)', fontWeight: 'bold', marginBottom: 'var(--spacing-1)' }}>
+                Step 3: Convert to Projects
+              </div>
+              <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
+                Convert prospects to active projects
+              </div>
+            </div>
+          </div>
+          
+          <div style={{
+            backgroundColor: 'var(--dark-black)',
+            padding: 'var(--spacing-3)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: 'var(--font-size-sm)',
+            color: 'var(--text-secondary)',
+            lineHeight: '1.5',
+            textAlign: 'center'
+          }}>
+            <strong>Current Status:</strong> You have {projects.length} active projects and {prospects.length} prospects ready to convert. 
+            Your strategy targets ${strategyGoals.revenueTarget.toLocaleString()} in annual revenue.
+          </div>
+        </div>
         <div style={{ marginBottom: 'var(--spacing-8)' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--spacing-2)' }}>
             {[1, 2, 3, 4].map((step) => (

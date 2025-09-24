@@ -5,12 +5,16 @@ const ProjectPipeline = () => {
   const { 
     projects, 
     setProjects, 
+    prospects,
     strategyGoals, 
     projectMetrics, 
     strategyScenarios,
     addProject,
     updateProject,
     deleteProject,
+    convertProspectToProject,
+    updateProspect,
+    deleteProspect,
     exportData,
     importData,
     clearAllData
@@ -19,6 +23,7 @@ const ProjectPipeline = () => {
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'list'
   const [showAddForm, setShowAddForm] = useState(false)
   const [showDataManagement, setShowDataManagement] = useState(false)
+  const [showProspects, setShowProspects] = useState(true)
 
   const [newProject, setNewProject] = useState({
     clientName: '',
@@ -285,6 +290,122 @@ const ProjectPipeline = () => {
             </div>
           </div>
         </div>
+
+        {/* Prospects Section */}
+        {prospects.length > 0 && (
+          <div className="card" style={{ marginBottom: 'var(--spacing-8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+              <h2 style={{ color: 'var(--white)', margin: 0 }}>
+                🎯 Prospects from Pricing Tool ({prospects.length})
+              </h2>
+              <button
+                onClick={() => setShowProspects(!showProspects)}
+                style={{
+                  padding: 'var(--spacing-2) var(--spacing-4)',
+                  backgroundColor: showProspects ? 'var(--primary-purple)' : 'transparent',
+                  color: showProspects ? 'var(--white)' : 'var(--text-secondary)',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: 'var(--font-size-sm)'
+                }}
+              >
+                {showProspects ? '👁️ Hide' : '👁️ Show'} Prospects
+              </button>
+            </div>
+            
+            {showProspects && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-4)' }}>
+                {prospects.map(prospect => (
+                  <div key={prospect.id} className="card" style={{ padding: 'var(--spacing-4)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-3)' }}>
+                      <h3 style={{ color: 'var(--white)', margin: 0, fontSize: 'var(--font-size-lg)' }}>
+                        {prospect.clientName}
+                      </h3>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                        <button
+                          onClick={() => convertProspectToProject(prospect.id)}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-3)',
+                            backgroundColor: 'var(--secondary-blue)',
+                            color: 'var(--white)',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          ➡️ Convert
+                        </button>
+                        <button
+                          onClick={() => deleteProspect(prospect.id)}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-3)',
+                            backgroundColor: '#EF4444',
+                            color: 'var(--white)',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginBottom: 'var(--spacing-3)' }}>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-1)' }}>
+                        Project: {prospect.projectTitle}
+                      </div>
+                      <div style={{ color: 'var(--text-primary)', fontSize: 'var(--font-size-sm)', lineHeight: '1.4' }}>
+                        {prospect.projectDescription}
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                          ${prospect.estimatedValue?.toLocaleString() || 'TBD'}
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                          Estimated Value
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                          From Pricing Tool
+                        </div>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
+                          {prospect.createdAt}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {prospect.notes && (
+                      <div style={{
+                        backgroundColor: 'var(--dark-black)',
+                        padding: 'var(--spacing-2)',
+                        borderRadius: 'var(--radius-sm)',
+                        marginTop: 'var(--spacing-3)',
+                        fontSize: 'var(--font-size-xs)',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.4'
+                      }}>
+                        {prospect.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Revenue Summary */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-8)' }}>

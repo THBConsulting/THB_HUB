@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { claudeAPI, supabaseService, openAIAPI } from '../services/api'
+import { useSharedData } from '../contexts/SharedDataContext'
 
 const PricingSOW = () => {
+  const { addProspect, strategyGoals } = useSharedData()
   const [formData, setFormData] = useState({
     clientType: '',
     clientName: '',
@@ -918,6 +920,29 @@ const PricingSOW = () => {
     }
     
     setIsGeneratingEnhancedSOW(false)
+  }
+
+  const addToPipeline = () => {
+    if (!pricingBreakdown) {
+      alert('Please generate pricing breakdown first.')
+      return
+    }
+
+    const prospect = {
+      clientName: formData.clientContext.clientName || 'Prospect Client',
+      clientEmail: formData.clientContext.clientEmail || '',
+      clientPhone: formData.clientContext.clientPhone || '',
+      projectTitle: `AI Automation Project - ${formData.clientContext.organizationType || 'Client'}`,
+      projectDescription: formData.discoveryNotes || 'AI automation project based on opportunity assessment',
+      estimatedValue: pricingBreakdown.totalProjectCost,
+      notes: `Generated from pricing tool. Strategy: ${strategyGoals.selectedScenario}. Revenue target: $${strategyGoals.revenueTarget.toLocaleString()}`,
+      pricingBreakdown: pricingBreakdown,
+      feasibilityAnalysis: feasibilityAnalysis,
+      source: 'pricing-tool'
+    }
+
+    addProspect(prospect)
+    alert('Prospect added to pipeline! You can now convert them to an active project in the Project Pipeline module.')
   }
 
   const updateSOWSection = (sectionId, content) => {
@@ -2099,6 +2124,41 @@ This SOW is valid for 30 days from the date of issue.
                     </div>
                   )
                 })()}
+              </div>
+            )}
+
+            {/* Add to Pipeline Button */}
+            {pricingBreakdown && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <button
+                  onClick={addToPipeline}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--secondary-blue)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-lg)',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    marginBottom: 'var(--spacing-3)'
+                  }}
+                >
+                  📈 Add Prospect to Pipeline
+                </button>
+                <div style={{
+                  backgroundColor: 'var(--dark-black)',
+                  padding: 'var(--spacing-3)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.5',
+                  textAlign: 'center'
+                }}>
+                  💡 This will create a prospect in your Project Pipeline that you can convert to an active project when ready.
+                </div>
               </div>
             )}
 

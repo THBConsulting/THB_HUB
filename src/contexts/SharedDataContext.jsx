@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabaseAPI } from '../services/api'
 
 // Shared data context for connecting modules
 const SharedDataContext = createContext()
@@ -35,6 +36,9 @@ export const SharedDataProvider = ({ children }) => {
   // Projects data (from Project Pipeline) - load from localStorage
   const [projects, setProjects] = useState(() => loadFromStorage('thb-projects', []))
   
+  // Prospects data (from Pricing Tool) - load from localStorage
+  const [prospects, setProspects] = useState(() => loadFromStorage('thb-prospects', []))
+  
   // Strategy data (from Business Strategy) - load from localStorage
   const [strategyGoals, setStrategyGoals] = useState(() => loadFromStorage('thb-strategy-goals', {
     revenueTarget: 100000,
@@ -48,11 +52,22 @@ export const SharedDataProvider = ({ children }) => {
   // Save projects to localStorage whenever projects change
   useEffect(() => {
     saveToStorage('thb-projects', projects)
+    // Also save to Supabase
+    supabaseAPI.saveProjects(projects)
   }, [projects])
+
+  // Save prospects to localStorage whenever prospects change
+  useEffect(() => {
+    saveToStorage('thb-prospects', prospects)
+    // Also save to Supabase
+    supabaseAPI.saveProspects(prospects)
+  }, [prospects])
 
   // Save strategy goals to localStorage whenever strategy changes
   useEffect(() => {
     saveToStorage('thb-strategy-goals', strategyGoals)
+    // Also save to Supabase
+    supabaseAPI.saveStrategyGoals(strategyGoals)
   }, [strategyGoals])
 
   // Calculate real-time metrics from projects
@@ -119,6 +134,10 @@ export const SharedDataProvider = ({ children }) => {
     projects,
     setProjects,
     
+    // Prospects data
+    prospects,
+    setProspects,
+    
     // Strategy data
     strategyGoals,
     setStrategyGoals,
@@ -159,10 +178,54 @@ export const SharedDataProvider = ({ children }) => {
       setProjects(prev => prev.filter(project => project.id !== projectId))
     },
     
+    // Prospect management functions
+    addProspect: (prospect) => {
+      const newProspect = {
+        id: Date.now(),
+        ...prospect,
+        status: 'prospect',
+        createdAt: new Date().toISOString().split('T')[0],
+        source: 'pricing-tool'
+      }
+      setProspects(prev => [...prev, newProspect])
+      return newProspect
+    },
+    
+    convertProspectToProject: (prospectId) => {
+      const prospect = prospects.find(p => p.id === prospectId)
+      if (prospect) {
+        const project = {
+          clientName: prospect.clientName,
+          clientEmail: prospect.clientEmail,
+          clientPhone: prospect.clientPhone || '',
+          projectTitle: prospect.projectTitle,
+          projectDescription: prospect.projectDescription,
+          estimatedValue: prospect.estimatedValue,
+          notes: `Converted from prospect: ${prospect.notes || ''}`
+        }
+        addProject(project)
+        // Remove prospect after conversion
+        setProspects(prev => prev.filter(p => p.id !== prospectId))
+        return true
+      }
+      return false
+    },
+    
+    updateProspect: (prospectId, updates) => {
+      setProspects(prev => prev.map(prospect => 
+        prospect.id === prospectId ? { ...prospect, ...updates } : prospect
+      ))
+    },
+    
+    deleteProspect: (prospectId) => {
+      setProspects(prev => prev.filter(prospect => prospect.id !== prospectId))
+    },
+    
     // Data management utilities
     exportData: () => {
       const data = {
         projects,
+        prospects,
         strategyGoals,
         exportDate: new Date().toISOString(),
         version: '1.0'
@@ -174,6 +237,7 @@ export const SharedDataProvider = ({ children }) => {
       try {
         const data = JSON.parse(jsonData)
         if (data.projects) setProjects(data.projects)
+        if (data.prospects) setProspects(data.prospects)
         if (data.strategyGoals) setStrategyGoals(data.strategyGoals)
         return true
       } catch (error) {
@@ -184,6 +248,7 @@ export const SharedDataProvider = ({ children }) => {
     
     clearAllData: () => {
       setProjects([])
+      setProspects([])
       setStrategyGoals({
         revenueTarget: 100000,
         selectedScenario: 'balanced',
@@ -193,6 +258,7 @@ export const SharedDataProvider = ({ children }) => {
         }
       })
       localStorage.removeItem('thb-projects')
+      localStorage.removeItem('thb-prospects')
       localStorage.removeItem('thb-strategy-goals')
     }
   }

@@ -988,3 +988,134 @@ Focus on realistic business constraints, market conditions, and actionable insig
     };
   }
 };
+
+// Supabase API Service for backend persistence
+export const supabaseAPI = {
+  async initialize() {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Supabase credentials not found')
+      return null
+    }
+
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      return createClient(supabaseUrl, supabaseKey)
+    } catch (error) {
+      console.error('Error initializing Supabase:', error)
+      return null
+    }
+  },
+
+  async saveProjects(projects) {
+    const supabase = await this.initialize()
+    if (!supabase) return
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .upsert(projects.map(project => ({
+          ...project,
+          updated_at: new Date().toISOString()
+        })), { onConflict: 'id' })
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error saving projects to Supabase:', error)
+    }
+  },
+
+  async saveProspects(prospects) {
+    const supabase = await this.initialize()
+    if (!supabase) return
+
+    try {
+      const { error } = await supabase
+        .from('prospects')
+        .upsert(prospects.map(prospect => ({
+          ...prospect,
+          updated_at: new Date().toISOString()
+        })), { onConflict: 'id' })
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error saving prospects to Supabase:', error)
+    }
+  },
+
+  async saveStrategyGoals(strategyGoals) {
+    const supabase = await this.initialize()
+    if (!supabase) return
+
+    try {
+      const { error } = await supabase
+        .from('strategy_goals')
+        .upsert({
+          id: 1, // Single strategy goals record
+          ...strategyGoals,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' })
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error saving strategy goals to Supabase:', error)
+    }
+  },
+
+  async loadProjects() {
+    const supabase = await this.initialize()
+    if (!supabase) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error loading projects from Supabase:', error)
+      return []
+    }
+  },
+
+  async loadProspects() {
+    const supabase = await this.initialize()
+    if (!supabase) return []
+
+    try {
+      const { data, error } = await supabase
+        .from('prospects')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error loading prospects from Supabase:', error)
+      return []
+    }
+  },
+
+  async loadStrategyGoals() {
+    const supabase = await this.initialize()
+    if (!supabase) return null
+
+    try {
+      const { data, error } = await supabase
+        .from('strategy_goals')
+        .select('*')
+        .eq('id', 1)
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error loading strategy goals from Supabase:', error)
+      return null
+    }
+  }
+};

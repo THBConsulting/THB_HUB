@@ -628,6 +628,167 @@ Return a JSON response with:
       },
       summary: `Total project investment: $${totalRecommended.toLocaleString()} (one-time) plus $${monthlyFee}/month ongoing costs.`
     };
+  },
+
+  async generateEnhancedSOW(sowData) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('OpenAI API key not found');
+      return this.generateFallbackEnhancedSOW(sowData);
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{
+            role: 'user',
+            content: `Generate a comprehensive, professional Statement of Work (SOW) for THB Operations Hub based on all the discovery and analysis data provided.
+
+CLIENT INFORMATION:
+- Client Name: ${sowData.clientName || 'TBD'}
+- Client Email: ${sowData.clientEmail || 'TBD'}
+- Organization Type: ${sowData.clientContext.organizationType || 'Not specified'}
+- Organization Mission: ${sowData.clientContext.organizationMission || 'Not specified'}
+- Team Size: ${sowData.clientContext.teamSize || 'Not specified'}
+- Tech Comfort Level: ${sowData.clientContext.techComfortLevel || 'Not specified'}
+- Primary Goal: ${sowData.clientContext.primaryGoal || 'Not specified'}
+
+PROJECT SCOPE:
+- Project Description: ${sowData.projectDescription || 'Not specified'}
+- Client Type: ${sowData.clientType || 'Not specified'}
+- Requested Features: ${sowData.features.join(', ') || 'None specified'}
+- Timeline Requirements: ${sowData.timeline || 'Not specified'}
+
+FEASIBILITY ANALYSIS RESULTS:
+${sowData.includedAreas.map(area => `
+- ${area.areaName}: ${area.feasibility} feasibility, ${area.complexity} complexity
+  Explanation: ${area.explanation}
+  Limitations: ${area.limitations}
+  Recommendations: ${area.recommendations.join(', ')}
+`).join('\n')}
+
+PRICING BREAKDOWN:
+- Pricing Tier: ${sowData.pricingBreakdown.pricingTier}
+- Development Fee: $${sowData.pricingBreakdown.developmentFee.recommended.toLocaleString()}
+- Consulting & Setup: ${sowData.pricingBreakdown.consultingSetup.estimatedHours} hours × $${sowData.pricingBreakdown.consultingSetup.hourlyRate} = $${sowData.pricingBreakdown.consultingSetup.totalCost.toLocaleString()}
+- Ongoing Monthly Costs: $${sowData.pricingBreakdown.ongoingCosts.monthlyFee}/month
+- Total Project Investment: $${sowData.pricingBreakdown.totalProjectCost.recommended.toLocaleString()}
+
+CLIENT DOCUMENT REFERENCE:
+${sowData.clientDocument ? `
+- Executive Summary: ${sowData.clientDocument.executiveSummary}
+- Client Role: ${sowData.clientDocument.clientRole}
+- Timeline: ${sowData.clientDocument.timeline}
+- Next Steps: ${sowData.clientDocument.nextSteps}
+` : 'No client document generated'}
+
+Generate a professional SOW with these sections:
+1. Executive Summary
+2. Project Scope & Objectives
+3. Detailed Deliverables (for each opportunity area)
+4. Pricing & Investment
+5. Project Timeline & Milestones
+6. Client Responsibilities
+7. Terms & Conditions
+8. Next Steps & Approval Process
+
+Use professional language, include THB Operations Hub branding, and make it comprehensive yet accessible. Return as structured JSON with each section as a separate field.`
+          }],
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        return this.generateFallbackEnhancedSOW(sowData);
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return this.generateFallbackEnhancedSOW(sowData);
+    }
+  },
+
+  generateFallbackEnhancedSOW(sowData) {
+    const includedAreas = sowData.includedAreas || [];
+    const pricing = sowData.pricingBreakdown || {};
+    
+    return {
+      executiveSummary: `This Statement of Work outlines the development and implementation of AI automation solutions for ${sowData.clientName || 'Client'}. Based on our comprehensive feasibility analysis, we will implement ${includedAreas.length} key automation areas to help achieve your primary goal of ${sowData.clientContext.primaryGoal || 'improving operational efficiency'}.`,
+      
+      projectScope: `The project encompasses the design, development, and implementation of custom AI automation solutions across ${includedAreas.map(area => area.areaName).join(', ')}. This scope is based on our detailed feasibility analysis and organizational assessment, ensuring solutions are tailored to your team size (${sowData.clientContext.teamSize}), tech comfort level (${sowData.clientContext.techComfortLevel}), and specific pain points.`,
+      
+      deliverables: includedAreas.map(area => ({
+        area: area.areaName,
+        description: area.explanation,
+        deliverables: [
+          `Custom ${area.areaName.toLowerCase()} automation solution`,
+          'Technical documentation and user guides',
+          'Team training and implementation support',
+          '30-day post-launch support and optimization'
+        ],
+        timeline: area.complexity === 'High' ? '3-4 weeks' : area.complexity === 'Medium' ? '2-3 weeks' : '1-2 weeks'
+      })),
+      
+      pricing: {
+        developmentFee: pricing.developmentFee?.recommended || 0,
+        consultingSetup: pricing.consultingSetup?.totalCost || 0,
+        ongoingMonthly: pricing.ongoingCosts?.monthlyFee || 0,
+        totalProject: pricing.totalProjectCost?.recommended || 0,
+        tier: pricing.pricingTier || 'Tier 1'
+      },
+      
+      timeline: {
+        totalDuration: `${Math.ceil(includedAreas.length * 2.5)} weeks`,
+        milestones: [
+          'Week 1: Project kickoff and detailed requirements gathering',
+          'Week 2-3: Development of first automation solution',
+          'Week 4-5: Testing, refinement, and team training',
+          'Week 6-7: Implementation of remaining solutions',
+          'Week 8: Final testing, documentation, and go-live'
+        ]
+      },
+      
+      clientResponsibilities: [
+        'Provide timely feedback during development phases',
+        'Participate in testing and validation sessions',
+        'Ensure team availability for training sessions',
+        'Provide access to necessary systems and data',
+        'Designate a project liaison for ongoing communication',
+        'Review and approve deliverables at each milestone'
+      ],
+      
+      termsConditions: [
+        'Payment terms: 50% deposit required to begin work, remaining balance due upon completion',
+        'Intellectual property rights remain with THB Operations Hub',
+        'Support included for 30 days post-delivery',
+        'Additional features or changes subject to change order',
+        'Project timeline may be adjusted based on client feedback cycles',
+        'Confidentiality agreement covers all project information'
+      ],
+      
+      nextSteps: [
+        'Review and approve this Statement of Work',
+        'Sign agreement and provide initial deposit',
+        'Schedule project kickoff meeting',
+        'Begin detailed requirements gathering',
+        'Start development of first automation solution'
+      ]
+    };
   }
 };
 

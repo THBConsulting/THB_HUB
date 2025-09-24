@@ -75,6 +75,14 @@ const PricingSOW = () => {
     consultingHours: null,
     monthlyFee: null
   })
+  
+  // Enhanced SOW State
+  const [enhancedSOW, setEnhancedSOW] = useState(null)
+  const [isGeneratingEnhancedSOW, setIsGeneratingEnhancedSOW] = useState(false)
+  const [sowSections, setSowSections] = useState([])
+  const [isEditingSOW, setIsEditingSOW] = useState(false)
+  const [sowPreviewMode, setSowPreviewMode] = useState(false)
+  const [sowTemplates, setSowTemplates] = useState([])
 
   const aiAssessmentCategories = [
     {
@@ -510,6 +518,177 @@ const PricingSOW = () => {
       totalProjectCost,
       summary: `Total project investment: $${totalProjectCost.toLocaleString()} (one-time) plus $${monthlyFee}/month ongoing costs.`
     }
+  }
+
+  const generateEnhancedSOW = async () => {
+    setIsGeneratingEnhancedSOW(true)
+    
+    try {
+      // Get included areas only
+      const includedAreas = feasibilityAnalysis.areas.filter(area => 
+        !excludedAreas.includes(area.areaName)
+      )
+
+      if (includedAreas.length === 0) {
+        alert('Please include at least one opportunity area in your project scope.')
+        setIsGeneratingEnhancedSOW(false)
+        return
+      }
+
+      if (!pricingBreakdown) {
+        alert('Please calculate pricing breakdown first.')
+        setIsGeneratingEnhancedSOW(false)
+        return
+      }
+
+      // Prepare comprehensive SOW data
+      const sowData = {
+        clientName: formData.clientName,
+        clientEmail: formData.clientEmail,
+        clientType: formData.clientType,
+        projectDescription: formData.projectDescription,
+        features: formData.features,
+        timeline: formData.timeline,
+        clientContext: formData.clientContext,
+        includedAreas: includedAreas,
+        pricingBreakdown: pricingBreakdown,
+        clientDocument: clientDocument
+      }
+
+      // Use OpenAI API for enhanced SOW generation
+      const sowResult = await openAIAPI.generateEnhancedSOW(sowData)
+      
+      // Structure the SOW sections
+      const sections = [
+        {
+          id: 'executive-summary',
+          title: 'Executive Summary',
+          content: sowResult.executiveSummary || 'Executive summary will be generated here.',
+          editable: true
+        },
+        {
+          id: 'project-scope',
+          title: 'Project Scope & Objectives',
+          content: sowResult.projectScope || 'Project scope will be outlined here.',
+          editable: true
+        },
+        {
+          id: 'deliverables',
+          title: 'Detailed Deliverables',
+          content: sowResult.deliverables ? sowResult.deliverables.map(deliverable => 
+            `${deliverable.area}:\n${deliverable.description}\n\nDeliverables:\n${deliverable.deliverables.map(d => `• ${d}`).join('\n')}\n\nTimeline: ${deliverable.timeline}`
+          ).join('\n\n') : 'Deliverables will be detailed here.',
+          editable: true
+        },
+        {
+          id: 'pricing',
+          title: 'Pricing & Investment',
+          content: `Pricing Tier: ${sowResult.pricing.tier}\n\nDevelopment Fee: $${sowResult.pricing.developmentFee.toLocaleString()}\nConsulting & Setup: $${sowResult.pricing.consultingSetup.toLocaleString()}\nOngoing Monthly: $${sowResult.pricing.ongoingMonthly}/month\n\nTotal Project Investment: $${sowResult.pricing.totalProject.toLocaleString()}`,
+          editable: true
+        },
+        {
+          id: 'timeline',
+          title: 'Project Timeline & Milestones',
+          content: `Total Duration: ${sowResult.timeline.totalDuration}\n\nMilestones:\n${sowResult.timeline.milestones.map(milestone => `• ${milestone}`).join('\n')}`,
+          editable: true
+        },
+        {
+          id: 'client-responsibilities',
+          title: 'Client Responsibilities',
+          content: sowResult.clientResponsibilities.map(responsibility => `• ${responsibility}`).join('\n'),
+          editable: true
+        },
+        {
+          id: 'terms-conditions',
+          title: 'Terms & Conditions',
+          content: sowResult.termsConditions.map(term => `• ${term}`).join('\n'),
+          editable: true
+        },
+        {
+          id: 'next-steps',
+          title: 'Next Steps & Approval Process',
+          content: sowResult.nextSteps.map(step => `• ${step}`).join('\n'),
+          editable: true
+        }
+      ]
+
+      setSowSections(sections)
+      setEnhancedSOW(sowResult)
+      setIsEditingSOW(true)
+      
+    } catch (error) {
+      console.error('Enhanced SOW generation failed:', error)
+      alert('Failed to generate enhanced SOW. Please try again.')
+    }
+    
+    setIsGeneratingEnhancedSOW(false)
+  }
+
+  const updateSOWSection = (sectionId, content) => {
+    setSowSections(prev => prev.map(section => 
+      section.id === sectionId ? { ...section, content } : section
+    ))
+  }
+
+  const saveSOWTemplate = () => {
+    const template = {
+      name: `${formData.clientName || 'Client'} - ${new Date().toLocaleDateString()}`,
+      sections: sowSections,
+      timestamp: new Date().toISOString(),
+      clientType: formData.clientType,
+      pricingTier: pricingBreakdown?.pricingTier
+    }
+    
+    const templates = JSON.parse(localStorage.getItem('sowTemplates') || '[]')
+    templates.push(template)
+    localStorage.setItem('sowTemplates', JSON.stringify(templates))
+    setSowTemplates(templates)
+    alert('SOW template saved successfully!')
+  }
+
+  const loadSOWTemplate = (template) => {
+    setSowSections(template.sections)
+    setIsEditingSOW(true)
+    alert(`Loaded template: ${template.name}`)
+  }
+
+  const exportSOWToPDF = () => {
+    const printWindow = window.open('', '_blank')
+    const sowContent = sowSections.map(section => 
+      `<h2>${section.title}</h2><div>${section.content.replace(/\n/g, '<br>')}</div>`
+    ).join('<br><br>')
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Statement of Work - ${formData.clientName || 'Client'}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h1 { color: #6B46C1; text-align: center; border-bottom: 3px solid #6B46C1; padding-bottom: 20px; }
+            h2 { color: #6B46C1; border-bottom: 2px solid #6B46C1; padding-bottom: 10px; margin-top: 30px; }
+            .header { text-align: center; margin-bottom: 40px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+            .branding { color: #6B46C1; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>STATEMENT OF WORK</h1>
+            <p class="branding">THB Operations Hub</p>
+            <p><strong>Client:</strong> ${formData.clientName || 'Client'}</p>
+            <p><strong>Email:</strong> ${formData.clientEmail || 'TBD'}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+          </div>
+          ${sowContent}
+          <div class="footer">
+            <p>Generated by THB Operations Hub - AI-Powered Business Solutions</p>
+            <p>This SOW is valid for 30 days from the date of issue.</p>
+          </div>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
   }
 
   const handleFeatureToggle = (feature) => {
@@ -1662,6 +1841,205 @@ This SOW is valid for 30 days from the date of issue.
                     </div>
                   )
                 })()}
+              </div>
+            )}
+
+            {/* Generate Enhanced SOW Button */}
+            {pricingBreakdown && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <button
+                  onClick={generateEnhancedSOW}
+                  disabled={isGeneratingEnhancedSOW}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--primary-purple)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-lg)',
+                    fontWeight: '600',
+                    cursor: isGeneratingEnhancedSOW ? 'not-allowed' : 'pointer',
+                    opacity: isGeneratingEnhancedSOW ? 0.6 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isGeneratingEnhancedSOW ? '📄 Generating Enhanced SOW...' : '📄 Generate Enhanced Statement of Work'}
+                </button>
+              </div>
+            )}
+
+            {/* Enhanced SOW Editor */}
+            {isEditingSOW && sowSections.length > 0 && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-4)' }}>
+                  <h3 className="text-lg font-semibold" style={{ color: 'var(--white)' }}>
+                    📄 Enhanced Statement of Work
+                  </h3>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                    <button
+                      onClick={() => setSowPreviewMode(!sowPreviewMode)}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: sowPreviewMode ? 'var(--secondary-blue)' : 'transparent',
+                        color: sowPreviewMode ? 'var(--white)' : 'var(--text-secondary)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {sowPreviewMode ? 'Edit' : 'Preview'}
+                    </button>
+                    <button
+                      onClick={saveSOWTemplate}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: 'transparent',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Save Template
+                    </button>
+                    <button
+                      onClick={exportSOWToPDF}
+                      style={{
+                        padding: 'var(--spacing-2) var(--spacing-3)',
+                        backgroundColor: 'var(--primary-purple)',
+                        color: 'var(--white)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 'var(--font-size-sm)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                  Comprehensive SOW incorporating all discovery data, feasibility analysis, pricing breakdown, and client context.
+                </p>
+
+                {sowSections.map((section, index) => (
+                  <div key={section.id} style={{
+                    marginBottom: 'var(--spacing-4)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    borderRadius: 'var(--radius-lg)',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      padding: 'var(--spacing-4)',
+                      backgroundColor: 'rgba(148, 163, 184, 0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <h4 style={{ 
+                        fontSize: 'var(--font-size-base)', 
+                        fontWeight: '600', 
+                        color: 'var(--white)',
+                        margin: '0'
+                      }}>
+                        {section.title}
+                      </h4>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                        <button
+                          onClick={() => {
+                            const newTitle = prompt('Enter new section title:', section.title)
+                            if (newTitle) {
+                              setSowSections(prev => prev.map(s => 
+                                s.id === section.id ? { ...s, title: newTitle } : s
+                              ))
+                            }
+                          }}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-2)',
+                            backgroundColor: 'transparent',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Rename
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ padding: 'var(--spacing-4)' }}>
+                      {sowPreviewMode ? (
+                        <div style={{
+                          fontSize: 'var(--font-size-sm)',
+                          color: 'var(--text-primary)',
+                          lineHeight: '1.6',
+                          whiteSpace: 'pre-wrap'
+                        }}>
+                          {section.content}
+                        </div>
+                      ) : (
+                        <textarea
+                          value={section.content}
+                          onChange={(e) => updateSOWSection(section.id, e.target.value)}
+                          rows={8}
+                          style={{
+                            width: '100%',
+                            padding: 'var(--spacing-3)',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            backgroundColor: 'var(--card-bg)',
+                            color: 'var(--text-primary)',
+                            fontSize: 'var(--font-size-sm)',
+                            resize: 'vertical',
+                            lineHeight: '1.5'
+                          }}
+                          placeholder="Enter section content..."
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Template Management */}
+                <div style={{
+                  backgroundColor: 'var(--dark-black)',
+                  padding: 'var(--spacing-4)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  marginTop: 'var(--spacing-4)'
+                }}>
+                  <h4 style={{ fontSize: 'var(--font-size-base)', fontWeight: '600', color: 'var(--white)', margin: '0 0 var(--spacing-3) 0' }}>
+                    📋 SOW Templates
+                  </h4>
+                  <p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--spacing-3) 0', fontSize: 'var(--font-size-sm)' }}>
+                    Save this SOW as a template for similar projects, or load an existing template.
+                  </p>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                    {sowTemplates.map((template, index) => (
+                      <button
+                        key={index}
+                        onClick={() => loadSOWTemplate(template)}
+                        style={{
+                          padding: 'var(--spacing-2) var(--spacing-3)',
+                          backgroundColor: 'transparent',
+                          color: 'var(--primary-purple)',
+                          border: '1px solid var(--primary-purple)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 'var(--font-size-sm)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {template.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 

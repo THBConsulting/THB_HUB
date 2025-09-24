@@ -883,5 +883,108 @@ export const supabaseService = {
       console.error('Error fetching action items:', error);
       return [];
     }
+  },
+
+  async analyzeBusinessStrategy(strategyData) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('OpenAI API key not found');
+      return this.generateFallbackBusinessStrategy(strategyData);
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{
+            role: 'user',
+            content: `Analyze this business strategy configuration and provide strategic insights:
+
+Strategy Model:
+- Revenue Target: $${strategyData.strategyModel.revenueTarget.toLocaleString()}
+- Service Mix: ${JSON.stringify(strategyData.strategyModel.serviceTypes)}
+- Client Mix: ${JSON.stringify(strategyData.strategyModel.clientMix)}
+- Capacity: ${JSON.stringify(strategyData.strategyModel.capacity)}
+
+Calculated Metrics:
+- Total Revenue: $${strategyData.revenue.totalRevenue.toLocaleString()}
+- Total Projects: ${strategyData.metrics.totalProjects}
+- Weekly Hours Needed: ${strategyData.metrics.weeklyHoursNeeded.toFixed(0)}
+- Clients Needed: ${strategyData.metrics.clientsNeeded}
+- Prospects Needed: ${strategyData.metrics.prospectsNeeded}
+
+Selected Path: ${strategyData.selectedPath.name}
+
+Please provide a comprehensive analysis in JSON format with:
+{
+  "feasibilityScore": number (1-10),
+  "feasibilityExplanation": "brief explanation of feasibility score",
+  "timeCommitment": "analysis of time requirements vs capacity",
+  "marketReality": "assessment of market conditions and prospect needs",
+  "riskAssessment": "identification of key risks and mitigation strategies",
+  "growthPotential": "evaluation of scalability and growth opportunities",
+  "recommendations": ["specific actionable recommendations"]
+}
+
+Focus on realistic business constraints, market conditions, and actionable insights.`
+          }],
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        return this.generateFallbackBusinessStrategy(strategyData);
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return this.generateFallbackBusinessStrategy(strategyData);
+    }
+  },
+
+  generateFallbackBusinessStrategy(strategyData) {
+    const { metrics, strategyModel } = strategyData;
+    
+    // Calculate feasibility score based on capacity constraints
+    let feasibilityScore = 7;
+    let feasibilityExplanation = 'Strategy appears feasible with current capacity constraints.';
+    
+    if (metrics.weeklyHoursNeeded > strategyModel.capacity.weeklyHours) {
+      feasibilityScore = 4;
+      feasibilityExplanation = 'Strategy exceeds available capacity - consider reducing scope or increasing capacity.';
+    } else if (metrics.totalProjects > strategyModel.capacity.maxConcurrentProjects) {
+      feasibilityScore = 5;
+      feasibilityExplanation = 'Strategy exceeds concurrent project limits - consider project sequencing.';
+    }
+
+    return {
+      feasibilityScore,
+      feasibilityExplanation,
+      timeCommitment: `Estimated ${metrics.weeklyHoursNeeded.toFixed(0)} hours per week required for project delivery. ${metrics.weeklyHoursNeeded > strategyModel.capacity.weeklyHours ? 'Exceeds available capacity.' : 'Within available capacity.'}`,
+      marketReality: `Need to maintain ${metrics.prospectsNeeded} active prospects in pipeline. Focus on ${strategyModel.clientMix.nonprofit}% nonprofits, ${strategyModel.clientMix.smallBusiness}% small businesses, ${strategyModel.clientMix.enterprise}% enterprise clients.`,
+      riskAssessment: 'Moderate risk due to client concentration. Consider diversifying client base and developing recurring revenue streams.',
+      growthPotential: 'Good scalability potential with platform approach. Focus on Tier 2/3 projects for better margins.',
+      recommendations: [
+        'Focus on Tier 2 projects for better profit margins',
+        'Develop referral program to reduce prospecting needs',
+        'Consider hiring contractor for overflow work',
+        'Build recurring revenue through backend services',
+        'Create standardized processes for Tier 1 projects'
+      ]
+    };
   }
 };

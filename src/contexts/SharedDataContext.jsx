@@ -12,18 +12,48 @@ export const useSharedData = () => {
 }
 
 export const SharedDataProvider = ({ children }) => {
-  // Projects data (from Project Pipeline)
-  const [projects, setProjects] = useState([])
+  // Load data from localStorage on initialization
+  const loadFromStorage = (key, defaultValue) => {
+    try {
+      const stored = localStorage.getItem(key)
+      return stored ? JSON.parse(stored) : defaultValue
+    } catch (error) {
+      console.error(`Error loading ${key} from localStorage:`, error)
+      return defaultValue
+    }
+  }
+
+  // Save data to localStorage
+  const saveToStorage = (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data))
+    } catch (error) {
+      console.error(`Error saving ${key} to localStorage:`, error)
+    }
+  }
+
+  // Projects data (from Project Pipeline) - load from localStorage
+  const [projects, setProjects] = useState(() => loadFromStorage('thb-projects', []))
   
-  // Strategy data (from Business Strategy)
-  const [strategyGoals, setStrategyGoals] = useState({
+  // Strategy data (from Business Strategy) - load from localStorage
+  const [strategyGoals, setStrategyGoals] = useState(() => loadFromStorage('thb-strategy-goals', {
     revenueTarget: 100000,
     selectedScenario: 'balanced',
     capacity: {
       weeklyHours: 40,
       maxConcurrentProjects: 4
     }
-  })
+  }))
+
+  // Save projects to localStorage whenever projects change
+  useEffect(() => {
+    saveToStorage('thb-projects', projects)
+  }, [projects])
+
+  // Save strategy goals to localStorage whenever strategy changes
+  useEffect(() => {
+    saveToStorage('thb-strategy-goals', strategyGoals)
+  }, [strategyGoals])
 
   // Calculate real-time metrics from projects
   const calculateProjectMetrics = () => {
@@ -127,6 +157,43 @@ export const SharedDataProvider = ({ children }) => {
     
     deleteProject: (projectId) => {
       setProjects(prev => prev.filter(project => project.id !== projectId))
+    },
+    
+    // Data management utilities
+    exportData: () => {
+      const data = {
+        projects,
+        strategyGoals,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      }
+      return JSON.stringify(data, null, 2)
+    },
+    
+    importData: (jsonData) => {
+      try {
+        const data = JSON.parse(jsonData)
+        if (data.projects) setProjects(data.projects)
+        if (data.strategyGoals) setStrategyGoals(data.strategyGoals)
+        return true
+      } catch (error) {
+        console.error('Error importing data:', error)
+        return false
+      }
+    },
+    
+    clearAllData: () => {
+      setProjects([])
+      setStrategyGoals({
+        revenueTarget: 100000,
+        selectedScenario: 'balanced',
+        capacity: {
+          weeklyHours: 40,
+          maxConcurrentProjects: 4
+        }
+      })
+      localStorage.removeItem('thb-projects')
+      localStorage.removeItem('thb-strategy-goals')
     }
   }
 

@@ -10,11 +10,15 @@ const ProjectPipeline = () => {
     strategyScenarios,
     addProject,
     updateProject,
-    deleteProject
+    deleteProject,
+    exportData,
+    importData,
+    clearAllData
   } = useSharedData()
 
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'list'
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showDataManagement, setShowDataManagement] = useState(false)
 
   const [newProject, setNewProject] = useState({
     clientName: '',
@@ -69,6 +73,43 @@ const ProjectPipeline = () => {
   }
 
   const strategicProgress = getStrategicProgress()
+
+  // Data management functions
+  const handleExportData = () => {
+    const data = exportData()
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `thb-operations-data-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportData = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const success = importData(e.target.result)
+        if (success) {
+          alert('Data imported successfully!')
+        } else {
+          alert('Error importing data. Please check the file format.')
+        }
+      }
+      reader.readAsText(file)
+    }
+  }
+
+  const handleClearData = () => {
+    if (window.confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+      clearAllData()
+      alert('All data has been cleared.')
+    }
+  }
 
   const ProjectCard = ({ project }) => (
     <div className="card" style={{ marginBottom: 'var(--spacing-4)', cursor: 'pointer' }}>
@@ -303,6 +344,21 @@ const ProjectPipeline = () => {
               }}
             >
               📝 List View
+            </button>
+            <button
+              onClick={() => setShowDataManagement(!showDataManagement)}
+              style={{
+                padding: 'var(--spacing-2) var(--spacing-4)',
+                backgroundColor: showDataManagement ? 'var(--primary-purple)' : 'transparent',
+                color: showDataManagement ? 'var(--white)' : 'var(--text-secondary)',
+                border: '1px solid rgba(148, 163, 184, 0.3)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontSize: 'var(--font-size-sm)'
+              }}
+            >
+              💾 Data Management
             </button>
           </div>
           

@@ -20,7 +20,8 @@ const PricingSOW = () => {
       dataAnalysis: [],
       processAutomation: [],
       informationManagement: [],
-      stakeholderEngagement: []
+      stakeholderEngagement: [],
+      eventsTraining: []
     },
     discoveryNotes: '',
     timeline: '',
@@ -181,6 +182,19 @@ const PricingSOW = () => {
         'Event management tools',
         'Feedback collection systems',
         'Online engagement platforms',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    },
+    eventsTraining: {
+      title: 'Events & Training',
+      options: [
+        'Conference planning and management',
+        'Training curriculum design',
+        'Staff onboarding programs',
+        'Event registration and tracking',
+        'Training delivery platforms',
+        'Workshop and meeting planning',
         'Client can\'t articulate specific needs but wants help in this area',
         'Not applicable - this category doesn\'t apply to their work'
       ]

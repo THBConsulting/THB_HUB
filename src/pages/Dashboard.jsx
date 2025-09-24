@@ -6,7 +6,6 @@ import PricingSOW from './PricingSOW'
 import ProjectPipeline from './ProjectPipeline'
 import BusinessStrategy from './BusinessStrategy'
 import MonthlyExpenses from './MonthlyExpenses'
-import ActionItems from './ActionItems'
 import SpeakingOpportunities from './SpeakingOpportunities'
 import AIToolsResearch from './AIToolsResearch'
 import CalendarOverview from './CalendarOverview'
@@ -58,17 +57,6 @@ const Dashboard = () => {
       status: 'active',
       priority: 'medium',
       component: MonthlyExpenses
-    },
-    {
-      id: 'action-items',
-      title: 'Action Items',
-      description: 'AI-extracted tasks from personal and business emails',
-      icon: '✅',
-      path: '/action-items',
-      metric: '23 Pending',
-      status: 'attention',
-      priority: 'high',
-      component: ActionItems
     },
     {
       id: 'speaking-opportunities',

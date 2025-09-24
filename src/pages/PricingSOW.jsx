@@ -176,11 +176,11 @@ const PricingSOW = () => {
       title: 'Stakeholder Engagement',
       options: [
         'Interactive forms and surveys',
-        'Client/donor portals',
+        'Customer/client portals',
         'Communication hubs',
         'Event management tools',
         'Feedback collection systems',
-        'Community engagement platforms',
+        'Online engagement platforms',
         'Client can\'t articulate specific needs but wants help in this area',
         'Not applicable - this category doesn\'t apply to their work'
       ]

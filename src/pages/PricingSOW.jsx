@@ -42,8 +42,6 @@ const PricingSOW = () => {
         interested: false
       }
     },
-    projectDescription: '',
-    features: [],
     timeline: '',
     budgetRange: ''
   })
@@ -154,20 +152,6 @@ const PricingSOW = () => {
     { value: 'small-business', label: 'Small Business', multiplier: 1.2 }
   ]
 
-  const availableFeatures = [
-    'Data Integration Hub',
-    'Automated Workflows',
-    'Custom Dashboard',
-    'API Development',
-    'Database Design',
-    'User Management System',
-    'Reporting & Analytics',
-    'Mobile App Integration',
-    'Third-party Integrations',
-    'Custom Forms Builder',
-    'Email Automation',
-    'Document Management'
-  ]
 
   const timelineOptions = [
     { value: 'urgent', label: 'Urgent (2-4 weeks)', multiplier: 1.5 },
@@ -546,8 +530,6 @@ const PricingSOW = () => {
         clientName: formData.clientName,
         clientEmail: formData.clientEmail,
         clientType: formData.clientType,
-        projectDescription: formData.projectDescription,
-        features: formData.features,
         timeline: formData.timeline,
         clientContext: formData.clientContext,
         includedAreas: includedAreas,
@@ -691,14 +673,6 @@ const PricingSOW = () => {
     printWindow.print()
   }
 
-  const handleFeatureToggle = (feature) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.includes(feature)
-        ? prev.features.filter(f => f !== feature)
-        : [...prev.features, feature]
-    }))
-  }
 
   const simulateAIAnalysis = async () => {
     setIsAnalyzing(true)
@@ -707,8 +681,6 @@ const PricingSOW = () => {
       // Use real Claude API for analysis
       const analysisResult = await claudeAPI.analyzeProjectComplexity({
         clientType: formData.clientType,
-        description: formData.projectDescription,
-        features: formData.features,
         timeline: formData.timeline,
         budget: formData.budgetRange,
         clientContext: formData.clientContext,
@@ -749,13 +721,12 @@ const PricingSOW = () => {
       const basePrice = 15000 + (complexityScore * 2000)
       const clientMultiplier = clientTypes.find(ct => ct.value === formData.clientType)?.multiplier || 1.0
       const timelineMultiplier = timelineOptions.find(to => to.value === formData.timeline)?.multiplier || 1.0
-      const featureMultiplier = 1 + (formData.features.length * 0.1)
       
-      const finalPrice = Math.round(basePrice * clientMultiplier * timelineMultiplier * featureMultiplier)
+      const finalPrice = Math.round(basePrice * clientMultiplier * timelineMultiplier)
       const minPrice = Math.round(finalPrice * 0.85)
       const maxPrice = Math.round(finalPrice * 1.15)
       
-      const estimatedWeeks = Math.ceil(4 + (complexityScore * 0.8) + (formData.features.length * 0.3))
+      const estimatedWeeks = Math.ceil(4 + (complexityScore * 0.8))
       
       setAnalysis({
         complexityScore,
@@ -2043,50 +2014,7 @@ This SOW is valid for 30 days from the date of issue.
               </div>
             )}
 
-            {/* Project Description */}
-            <div style={{ marginBottom: 'var(--spacing-6)' }}>
-              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
-                Project Description *
-              </label>
-              <textarea
-                value={formData.projectDescription}
-                onChange={(e) => handleInputChange('projectDescription', e.target.value)}
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: 'var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(148, 163, 184, 0.3)',
-                  backgroundColor: 'var(--card-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'var(--font-size-sm)',
-                  resize: 'vertical'
-                }}
-                placeholder="Describe the project goals, current challenges, and desired outcomes..."
-              />
-            </div>
 
-            {/* Features */}
-            <div style={{ marginBottom: 'var(--spacing-6)' }}>
-              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
-                Requested Features
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-2)' }}>
-                {availableFeatures.map(feature => (
-                  <label key={feature} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.features.includes(feature)}
-                      onChange={() => handleFeatureToggle(feature)}
-                      style={{ marginRight: 'var(--spacing-2)' }}
-                    />
-                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-                      {feature}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
 
             {/* Timeline */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>
@@ -2141,7 +2069,7 @@ This SOW is valid for 30 days from the date of issue.
             {/* Analyze Button */}
             <button
               onClick={simulateAIAnalysis}
-              disabled={!formData.clientType || !formData.projectDescription || isAnalyzing}
+              disabled={!formData.clientType || isAnalyzing}
               style={{
                 width: '100%',
                 padding: 'var(--spacing-4)',
@@ -2152,7 +2080,7 @@ This SOW is valid for 30 days from the date of issue.
                 fontSize: 'var(--font-size-lg)',
                 fontWeight: '600',
                 cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                opacity: (!formData.clientType || !formData.projectDescription || isAnalyzing) ? 0.6 : 1,
+                opacity: (!formData.clientType || isAnalyzing) ? 0.6 : 1,
                 transition: 'all 0.2s ease'
               }}
             >

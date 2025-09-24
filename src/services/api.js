@@ -661,9 +661,7 @@ CLIENT INFORMATION:
 - Primary Goal: ${sowData.clientContext.primaryGoal || 'Not specified'}
 
 PROJECT SCOPE:
-- Project Description: ${sowData.projectDescription || 'Not specified'}
 - Client Type: ${sowData.clientType || 'Not specified'}
-- Requested Features: ${sowData.features.join(', ') || 'None specified'}
 - Timeline Requirements: ${sowData.timeline || 'Not specified'}
 
 FEASIBILITY ANALYSIS RESULTS:

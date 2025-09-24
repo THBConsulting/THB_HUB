@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { claudeAPI, supabaseService } from '../services/api'
+import { claudeAPI, supabaseService, openAIAPI } from '../services/api'
 
 const PricingSOW = () => {
   const [formData, setFormData] = useState({

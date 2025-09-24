@@ -411,25 +411,25 @@ const ProjectPipeline = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-8)' }}>
           <div className="card" style={{ textAlign: 'center' }}>
             <h3 style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', margin: 0 }}>
-              ${revenue.totalEstimated.toLocaleString()}
+              ${projectMetrics.totalEstimated.toLocaleString()}
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Total Pipeline</p>
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <h3 style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', margin: 0 }}>
-              ${revenue.totalReceived.toLocaleString()}
+              ${projectMetrics.totalReceived.toLocaleString()}
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Received</p>
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <h3 style={{ color: '#F59E0B', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', margin: 0 }}>
-              ${revenue.pendingDeposits.toLocaleString()}
+              ${(projectMetrics.totalEstimated - projectMetrics.depositsReceived).toLocaleString()}
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Pending Deposits</p>
           </div>
           <div className="card" style={{ textAlign: 'center' }}>
             <h3 style={{ color: '#10B981', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold', margin: 0 }}>
-              ${revenue.pendingFinalPayments.toLocaleString()}
+              ${(projectMetrics.totalEstimated - projectMetrics.finalPaymentsReceived).toLocaleString()}
             </h3>
             <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Pending Final</p>
           </div>

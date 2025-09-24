@@ -913,7 +913,7 @@ Strategy Model:
 - Capacity: ${JSON.stringify(strategyData.strategyModel.capacity)}
 
 Calculated Metrics:
-- Total Revenue: $${strategyData.revenue.totalRevenue.toLocaleString()}
+- Total Revenue: $${strategyData.metrics.totalRevenue.toLocaleString()}
 - Total Projects: ${strategyData.metrics.totalProjects}
 - Weekly Hours Needed: ${strategyData.metrics.weeklyHoursNeeded.toFixed(0)}
 - Clients Needed: ${strategyData.metrics.clientsNeeded}

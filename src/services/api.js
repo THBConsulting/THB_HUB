@@ -466,6 +466,168 @@ Write in a professional but accessible tone. Focus on:
       timeline: `Implementation typically takes 6-12 weeks depending on complexity. We'll start with the highest-impact, lowest-complexity solutions and build from there. Regular check-ins ensure we stay on track.`,
       nextSteps: `Next steps include: 1) Review and approve this document, 2) Schedule a project kickoff meeting, 3) Begin with the first solution implementation, 4) Regular progress reviews and adjustments as needed.`
     };
+  },
+
+  async calculatePricingBreakdown(projectData) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('OpenAI API key not found');
+      return this.generateFallbackPricingBreakdown(projectData);
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{
+            role: 'user',
+            content: `Calculate a detailed pricing breakdown for this AI automation project using our 3-component pricing structure.
+
+Project Context:
+- Organization Type: ${projectData.clientContext.organizationType || 'Not specified'}
+- Team Size: ${projectData.clientContext.teamSize || 'Not specified'}
+- Tech Comfort Level: ${projectData.clientContext.techComfortLevel || 'Not specified'}
+- Primary Goal: ${projectData.clientContext.primaryGoal || 'Not specified'}
+
+Included Opportunity Areas:
+${projectData.includedAreas.map(area => `
+- ${area.areaName}: ${area.feasibility} feasibility, ${area.complexity} complexity
+  Explanation: ${area.explanation}
+`).join('\n')}
+
+Pricing Structure:
+1. Development Fee: Based on complexity tiers
+   - Tier 1 (1-2 areas, low complexity): $1,500-$3,000
+   - Tier 2 (3-4 areas, medium complexity): $3,000-$5,000
+   - Tier 3 (5+ areas, high complexity): $5,000-$7,500
+
+2. Consulting & Setup: Hourly rate × estimated hours
+   - Hourly rate: $150/hour
+   - Hours based on complexity, team size, and tech comfort level
+
+3. Ongoing Backend Costs: Monthly fees
+   - Based on expected usage, integrations, and hosting needs
+
+Return a JSON response with:
+{
+  "pricingTier": "Tier 1|Tier 2|Tier 3",
+  "developmentFee": {
+    "min": number,
+    "max": number,
+    "recommended": number,
+    "explanation": "why this tier was selected"
+  },
+  "consultingSetup": {
+    "hourlyRate": 150,
+    "estimatedHours": number,
+    "totalCost": number,
+    "breakdown": "explanation of hours needed"
+  },
+  "ongoingCosts": {
+    "monthlyFee": number,
+    "annualFee": number,
+    "breakdown": "explanation of ongoing costs"
+  },
+  "totalProjectCost": {
+    "min": number,
+    "max": number,
+    "recommended": number
+  },
+  "summary": "brief explanation of the pricing structure"
+}`
+          }],
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        return this.generateFallbackPricingBreakdown(projectData);
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return this.generateFallbackPricingBreakdown(projectData);
+    }
+  },
+
+  generateFallbackPricingBreakdown(projectData) {
+    const areaCount = projectData.includedAreas.length;
+    const avgComplexity = projectData.includedAreas.reduce((sum, area) => {
+      const complexityScore = area.complexity === 'High' ? 3 : area.complexity === 'Medium' ? 2 : 1;
+      return sum + complexityScore;
+    }, 0) / areaCount;
+
+    // Determine pricing tier
+    let pricingTier, developmentFee;
+    if (areaCount <= 2 && avgComplexity <= 1.5) {
+      pricingTier = 'Tier 1';
+      developmentFee = { min: 1500, max: 3000, recommended: 2250 };
+    } else if (areaCount <= 4 && avgComplexity <= 2.5) {
+      pricingTier = 'Tier 2';
+      developmentFee = { min: 3000, max: 5000, recommended: 4000 };
+    } else {
+      pricingTier = 'Tier 3';
+      developmentFee = { min: 5000, max: 7500, recommended: 6250 };
+    }
+
+    // Calculate consulting hours based on complexity and team size
+    const baseHours = areaCount * 8; // 8 hours per area
+    const complexityMultiplier = avgComplexity;
+    const teamSizeMultiplier = projectData.clientContext.teamSize === '1-5' ? 0.8 : 
+                               projectData.clientContext.teamSize === '6-15' ? 1.0 : 1.2;
+    const techComfortMultiplier = projectData.clientContext.techComfortLevel === 'basic' ? 1.3 :
+                                  projectData.clientContext.techComfortLevel === 'intermediate' ? 1.0 : 0.8;
+
+    const estimatedHours = Math.round(baseHours * complexityMultiplier * teamSizeMultiplier * techComfortMultiplier);
+    const hourlyRate = 150;
+    const consultingTotal = estimatedHours * hourlyRate;
+
+    // Calculate ongoing costs
+    const monthlyFee = Math.round(50 + (areaCount * 25) + (avgComplexity * 20));
+    const annualFee = monthlyFee * 12;
+
+    const totalMin = developmentFee.min + consultingTotal;
+    const totalMax = developmentFee.max + consultingTotal;
+    const totalRecommended = developmentFee.recommended + consultingTotal;
+
+    return {
+      pricingTier,
+      developmentFee: {
+        ...developmentFee,
+        explanation: `Selected ${pricingTier} based on ${areaCount} opportunity areas and ${avgComplexity.toFixed(1)} average complexity score.`
+      },
+      consultingSetup: {
+        hourlyRate: 150,
+        estimatedHours: estimatedHours,
+        totalCost: consultingTotal,
+        breakdown: `${estimatedHours} hours estimated based on ${areaCount} areas, complexity level, team size (${projectData.clientContext.teamSize}), and tech comfort level (${projectData.clientContext.techComfortLevel}).`
+      },
+      ongoingCosts: {
+        monthlyFee: monthlyFee,
+        annualFee: annualFee,
+        breakdown: `Monthly hosting, API costs, and maintenance based on ${areaCount} active solutions and complexity level.`
+      },
+      totalProjectCost: {
+        min: totalMin,
+        max: totalMax,
+        recommended: totalRecommended
+      },
+      summary: `Total project investment: $${totalRecommended.toLocaleString()} (one-time) plus $${monthlyFee}/month ongoing costs.`
+    };
   }
 };
 

@@ -66,6 +66,15 @@ const PricingSOW = () => {
   const [documentSections, setDocumentSections] = useState([])
   const [isEditingDocument, setIsEditingDocument] = useState(false)
   const [isPreviewMode, setIsPreviewMode] = useState(false)
+  
+  // New Pricing State
+  const [pricingBreakdown, setPricingBreakdown] = useState(null)
+  const [isCalculatingPricing, setIsCalculatingPricing] = useState(false)
+  const [manualAdjustments, setManualAdjustments] = useState({
+    developmentFee: null,
+    consultingHours: null,
+    monthlyFee: null
+  })
 
   const aiAssessmentCategories = [
     {
@@ -425,6 +434,82 @@ const PricingSOW = () => {
     `)
     printWindow.document.close()
     printWindow.print()
+  }
+
+  const calculatePricingBreakdown = async () => {
+    setIsCalculatingPricing(true)
+    
+    try {
+      // Get included areas only
+      const includedAreas = feasibilityAnalysis.areas.filter(area => 
+        !excludedAreas.includes(area.areaName)
+      )
+
+      if (includedAreas.length === 0) {
+        alert('Please include at least one opportunity area in your project scope.')
+        setIsCalculatingPricing(false)
+        return
+      }
+
+      // Prepare data for pricing calculation
+      const pricingData = {
+        clientContext: formData.clientContext,
+        includedAreas: includedAreas
+      }
+
+      // Use OpenAI API for pricing calculation
+      const pricingResult = await openAIAPI.calculatePricingBreakdown(pricingData)
+      setPricingBreakdown(pricingResult)
+      
+    } catch (error) {
+      console.error('Pricing calculation failed:', error)
+      alert('Failed to calculate pricing breakdown. Please try again.')
+    }
+    
+    setIsCalculatingPricing(false)
+  }
+
+  const updateManualAdjustment = (component, value) => {
+    setManualAdjustments(prev => ({
+      ...prev,
+      [component]: value ? parseFloat(value) : null
+    }))
+  }
+
+  const getAdjustedPricing = () => {
+    if (!pricingBreakdown) return null
+
+    const developmentFee = manualAdjustments.developmentFee !== null 
+      ? manualAdjustments.developmentFee 
+      : pricingBreakdown.developmentFee.recommended
+
+    const consultingHours = manualAdjustments.consultingHours !== null 
+      ? manualAdjustments.consultingHours 
+      : pricingBreakdown.consultingSetup.estimatedHours
+
+    const consultingTotal = consultingHours * pricingBreakdown.consultingSetup.hourlyRate
+
+    const monthlyFee = manualAdjustments.monthlyFee !== null 
+      ? manualAdjustments.monthlyFee 
+      : pricingBreakdown.ongoingCosts.monthlyFee
+
+    const totalProjectCost = developmentFee + consultingTotal
+
+    return {
+      developmentFee,
+      consultingSetup: {
+        ...pricingBreakdown.consultingSetup,
+        estimatedHours: consultingHours,
+        totalCost: consultingTotal
+      },
+      ongoingCosts: {
+        ...pricingBreakdown.ongoingCosts,
+        monthlyFee: monthlyFee,
+        annualFee: monthlyFee * 12
+      },
+      totalProjectCost,
+      summary: `Total project investment: $${totalProjectCost.toLocaleString()} (one-time) plus $${monthlyFee}/month ongoing costs.`
+    }
   }
 
   const handleFeatureToggle = (feature) => {
@@ -1354,6 +1439,232 @@ This SOW is valid for 30 days from the date of issue.
               </div>
             )}
 
+            {/* Calculate Pricing Button */}
+            {feasibilityAnalysis && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <button
+                  onClick={calculatePricingBreakdown}
+                  disabled={isCalculatingPricing || excludedAreas.length === feasibilityAnalysis.areas.length}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--secondary-blue)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    fontSize: 'var(--font-size-lg)',
+                    fontWeight: '600',
+                    cursor: isCalculatingPricing ? 'not-allowed' : 'pointer',
+                    opacity: (isCalculatingPricing || excludedAreas.length === feasibilityAnalysis.areas.length) ? 0.6 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isCalculatingPricing ? '💰 Calculating Pricing...' : '💰 Calculate 3-Component Pricing'}
+                </button>
+              </div>
+            )}
+
+            {/* Pricing Breakdown Display */}
+            {pricingBreakdown && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>
+                  💰 3-Component Pricing Breakdown
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                  AI-calculated pricing based on feasibility analysis and organizational context.
+                </p>
+
+                {(() => {
+                  const adjustedPricing = getAdjustedPricing()
+                  return (
+                    <div>
+                      {/* Pricing Tier */}
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <div style={{
+                          backgroundColor: 'var(--dark-black)',
+                          padding: 'var(--spacing-4)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1px solid rgba(148, 163, 184, 0.2)',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-purple)' }}>
+                            {pricingBreakdown.pricingTier}
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-sm)' }}>
+                            {pricingBreakdown.developmentFee.explanation}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Development Fee */}
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <h4 style={{ fontSize: 'var(--font-size-base)', fontWeight: '600', color: 'var(--white)', margin: '0 0 var(--spacing-2) 0' }}>
+                          1. Development Fee
+                        </h4>
+                        <div style={{
+                          backgroundColor: 'var(--dark-black)',
+                          padding: 'var(--spacing-4)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1px solid rgba(148, 163, 184, 0.2)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-3)' }}>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                              Custom AI solution development
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                              <input
+                                type="number"
+                                value={manualAdjustments.developmentFee !== null ? manualAdjustments.developmentFee : ''}
+                                onChange={(e) => updateManualAdjustment('developmentFee', e.target.value)}
+                                placeholder={adjustedPricing.developmentFee.toString()}
+                                style={{
+                                  width: '100px',
+                                  padding: 'var(--spacing-1) var(--spacing-2)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                                  backgroundColor: 'var(--card-bg)',
+                                  color: 'var(--text-primary)',
+                                  fontSize: 'var(--font-size-sm)',
+                                  textAlign: 'right'
+                                }}
+                              />
+                              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>or</span>
+                              <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'bold', color: 'var(--primary-purple)' }}>
+                                ${adjustedPricing.developmentFee.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', margin: '0', fontSize: 'var(--font-size-sm)' }}>
+                            Range: ${pricingBreakdown.developmentFee.min.toLocaleString()} - ${pricingBreakdown.developmentFee.max.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Consulting & Setup */}
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <h4 style={{ fontSize: 'var(--font-size-base)', fontWeight: '600', color: 'var(--white)', margin: '0 0 var(--spacing-2) 0' }}>
+                          2. Consulting & Setup
+                        </h4>
+                        <div style={{
+                          backgroundColor: 'var(--dark-black)',
+                          padding: 'var(--spacing-4)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1px solid rgba(148, 163, 184, 0.2)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-3)' }}>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                              Implementation, training, and support
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                              <input
+                                type="number"
+                                value={manualAdjustments.consultingHours !== null ? manualAdjustments.consultingHours : ''}
+                                onChange={(e) => updateManualAdjustment('consultingHours', e.target.value)}
+                                placeholder={adjustedPricing.consultingSetup.estimatedHours.toString()}
+                                style={{
+                                  width: '80px',
+                                  padding: 'var(--spacing-1) var(--spacing-2)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                                  backgroundColor: 'var(--card-bg)',
+                                  color: 'var(--text-primary)',
+                                  fontSize: 'var(--font-size-sm)',
+                                  textAlign: 'right'
+                                }}
+                              />
+                              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>hours × $150</span>
+                              <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'bold', color: 'var(--secondary-blue)' }}>
+                                ${adjustedPricing.consultingSetup.totalCost.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', margin: '0', fontSize: 'var(--font-size-sm)' }}>
+                            {pricingBreakdown.consultingSetup.breakdown}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Ongoing Backend Costs */}
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <h4 style={{ fontSize: 'var(--font-size-base)', fontWeight: '600', color: 'var(--white)', margin: '0 0 var(--spacing-2) 0' }}>
+                          3. Ongoing Backend Costs
+                        </h4>
+                        <div style={{
+                          backgroundColor: 'var(--dark-black)',
+                          padding: 'var(--spacing-4)',
+                          borderRadius: 'var(--radius-lg)',
+                          border: '1px solid rgba(148, 163, 184, 0.2)'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-3)' }}>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                              Hosting, APIs, and maintenance
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                              <input
+                                type="number"
+                                value={manualAdjustments.monthlyFee !== null ? manualAdjustments.monthlyFee : ''}
+                                onChange={(e) => updateManualAdjustment('monthlyFee', e.target.value)}
+                                placeholder={adjustedPricing.ongoingCosts.monthlyFee.toString()}
+                                style={{
+                                  width: '80px',
+                                  padding: 'var(--spacing-1) var(--spacing-2)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                                  backgroundColor: 'var(--card-bg)',
+                                  color: 'var(--text-primary)',
+                                  fontSize: 'var(--font-size-sm)',
+                                  textAlign: 'right'
+                                }}
+                              />
+                              <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>/month</span>
+                              <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'bold', color: 'var(--primary-purple)' }}>
+                                ${adjustedPricing.ongoingCosts.monthlyFee}/month
+                              </span>
+                            </div>
+                          </div>
+                          <p style={{ color: 'var(--text-secondary)', margin: '0', fontSize: 'var(--font-size-sm)' }}>
+                            {pricingBreakdown.ongoingCosts.breakdown}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Total Project Cost */}
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <div style={{
+                          backgroundColor: 'var(--primary-purple)',
+                          padding: 'var(--spacing-4)',
+                          borderRadius: 'var(--radius-lg)',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--white)' }}>
+                            ${adjustedPricing.totalProjectCost.toLocaleString()}
+                          </div>
+                          <p style={{ color: 'var(--white)', margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-sm)' }}>
+                            Total Project Investment
+                          </p>
+                          <p style={{ color: 'var(--white)', margin: 'var(--spacing-2) 0 0 0', fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
+                            Plus ${adjustedPricing.ongoingCosts.monthlyFee}/month ongoing
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      <div style={{
+                        backgroundColor: 'var(--dark-black)',
+                        padding: 'var(--spacing-4)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid rgba(148, 163, 184, 0.2)'
+                      }}>
+                        <p style={{ color: 'var(--text-primary)', margin: '0', fontSize: 'var(--font-size-sm)', lineHeight: '1.5' }}>
+                          {adjustedPricing.summary}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
             {/* Project Description */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>
               <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
@@ -1510,22 +1821,16 @@ This SOW is valid for 30 days from the date of issue.
                     backgroundColor: 'var(--dark-black)',
                     padding: 'var(--spacing-4)',
                     borderRadius: 'var(--radius-lg)',
-                    border: '1px solid rgba(148, 163, 184, 0.2)'
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    textAlign: 'center'
                   }}>
-                    <div style={{ textAlign: 'center', marginBottom: 'var(--spacing-3)' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--secondary-blue)' }}>
-                        ${analysis.pricingRange.recommended.toLocaleString()}
-                      </div>
-                      <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Recommended Investment</p>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--font-size-sm)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>
-                        Range: ${analysis.pricingRange.min.toLocaleString()}
-                      </span>
-                      <span style={{ color: 'var(--text-secondary)' }}>
-                        ${analysis.pricingRange.max.toLocaleString()}
-                      </span>
-                    </div>
+                    <div style={{ fontSize: '1.5rem', marginBottom: 'var(--spacing-3)' }}>💰</div>
+                    <p style={{ color: 'var(--text-secondary)', margin: '0 0 var(--spacing-2) 0' }}>
+                      Use the new 3-Component Pricing Breakdown above for detailed pricing based on feasibility analysis.
+                    </p>
+                    <p style={{ color: 'var(--text-primary)', margin: '0', fontSize: 'var(--font-size-sm)' }}>
+                      This provides transparent pricing with Development Fee, Consulting & Setup, and Ongoing Costs.
+                    </p>
                   </div>
                 </div>
 

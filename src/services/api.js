@@ -990,8 +990,15 @@ Focus on realistic business constraints, market conditions, and actionable insig
 };
 
 // Supabase API Service for backend persistence
+let supabaseClient = null
+
 export const supabaseAPI = {
   async initialize() {
+    // Return existing client if already initialized
+    if (supabaseClient) {
+      return supabaseClient
+    }
+
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
     
@@ -1002,7 +1009,8 @@ export const supabaseAPI = {
 
     try {
       const { createClient } = await import('@supabase/supabase-js')
-      return createClient(supabaseUrl, supabaseKey)
+      supabaseClient = createClient(supabaseUrl, supabaseKey)
+      return supabaseClient
     } catch (error) {
       console.error('Error initializing Supabase:', error)
       return null
@@ -1021,7 +1029,13 @@ export const supabaseAPI = {
           updated_at: new Date().toISOString()
         })), { onConflict: 'id' })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
+          return
+        }
+        throw error
+      }
     } catch (error) {
       console.error('Error saving projects to Supabase:', error)
     }
@@ -1039,7 +1053,13 @@ export const supabaseAPI = {
           updated_at: new Date().toISOString()
         })), { onConflict: 'id' })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
+          return
+        }
+        throw error
+      }
     } catch (error) {
       console.error('Error saving prospects to Supabase:', error)
     }
@@ -1058,7 +1078,13 @@ export const supabaseAPI = {
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
+          return
+        }
+        throw error
+      }
     } catch (error) {
       console.error('Error saving strategy goals to Supabase:', error)
     }
@@ -1074,7 +1100,13 @@ export const supabaseAPI = {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Projects table not found in Supabase. Please run the SQL setup script.')
+          return []
+        }
+        throw error
+      }
       return data || []
     } catch (error) {
       console.error('Error loading projects from Supabase:', error)
@@ -1092,7 +1124,13 @@ export const supabaseAPI = {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Prospects table not found in Supabase. Please run the SQL setup script.')
+          return []
+        }
+        throw error
+      }
       return data || []
     } catch (error) {
       console.error('Error loading prospects from Supabase:', error)
@@ -1111,7 +1149,13 @@ export const supabaseAPI = {
         .eq('id', 1)
         .single()
 
-      if (error) throw error
+      if (error) {
+        if (error.code === 'PGRST205') {
+          console.warn('Strategy goals table not found in Supabase. Please run the SQL setup script.')
+          return null
+        }
+        throw error
+      }
       return data
     } catch (error) {
       console.error('Error loading strategy goals from Supabase:', error)

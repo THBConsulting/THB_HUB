@@ -2,103 +2,7 @@ import React, { useState } from 'react'
 
 const ProjectPipeline = () => {
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'list'
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      clientName: 'Green Valley Nonprofit',
-      clientEmail: 'sarah@greenvalley.org',
-      clientPhone: '(555) 123-4567',
-      projectTitle: 'Donor Management Automation Hub',
-      projectDescription: 'Automated donor tracking, communication workflows, and reporting system',
-      status: 'discovery',
-      estimatedValue: 35000,
-      depositAmount: 17500,
-      depositReceived: false,
-      finalPaymentAmount: 17500,
-      finalPaymentReceived: false,
-      proposalSentDate: '2024-01-15',
-      startDate: null,
-      completionDate: null,
-      notes: 'Initial discovery call completed. Client interested in CRM integration.',
-      createdAt: '2024-01-10'
-    },
-    {
-      id: 2,
-      clientName: 'TechStart Solutions',
-      clientEmail: 'mike@techstart.com',
-      clientPhone: '(555) 987-6543',
-      projectTitle: 'Business Process Automation',
-      projectDescription: 'Custom workflow automation for client onboarding and project management',
-      status: 'proposal',
-      estimatedValue: 28000,
-      depositAmount: 14000,
-      depositReceived: false,
-      finalPaymentAmount: 14000,
-      finalPaymentReceived: false,
-      proposalSentDate: '2024-01-20',
-      startDate: null,
-      completionDate: null,
-      notes: 'Proposal sent. Waiting for client decision. Follow up scheduled for next week.',
-      createdAt: '2024-01-18'
-    },
-    {
-      id: 3,
-      clientName: 'Community Health Center',
-      clientEmail: 'dr.johnson@communityhealth.org',
-      clientPhone: '(555) 456-7890',
-      projectTitle: 'Patient Data Integration System',
-      projectDescription: 'Integration hub for patient records, scheduling, and billing systems',
-      status: 'in-progress',
-      estimatedValue: 45000,
-      depositAmount: 22500,
-      depositReceived: true,
-      finalPaymentAmount: 22500,
-      finalPaymentReceived: false,
-      proposalSentDate: '2024-01-05',
-      startDate: '2024-01-25',
-      completionDate: null,
-      notes: 'Project started. Weekly check-ins scheduled. On track for March completion.',
-      createdAt: '2024-01-02'
-    },
-    {
-      id: 4,
-      clientName: 'Local Food Bank',
-      clientEmail: 'volunteer@localfoodbank.org',
-      clientPhone: '(555) 321-0987',
-      projectTitle: 'Volunteer Management Platform',
-      projectDescription: 'Automated volunteer scheduling, communication, and impact tracking',
-      status: 'completed',
-      estimatedValue: 22000,
-      depositAmount: 11000,
-      depositReceived: true,
-      finalPaymentAmount: 11000,
-      finalPaymentReceived: true,
-      proposalSentDate: '2023-12-10',
-      startDate: '2023-12-20',
-      completionDate: '2024-01-30',
-      notes: 'Project completed successfully. Client very satisfied. Referral potential.',
-      createdAt: '2023-12-05'
-    },
-    {
-      id: 5,
-      clientName: 'EcoTech Industries',
-      clientEmail: 'ceo@ecotech.com',
-      clientPhone: '(555) 654-3210',
-      projectTitle: 'Environmental Data Analytics Hub',
-      projectDescription: 'Custom dashboard for environmental monitoring and compliance reporting',
-      status: 'discovery',
-      estimatedValue: 52000,
-      depositAmount: 26000,
-      depositReceived: false,
-      finalPaymentAmount: 26000,
-      finalPaymentReceived: false,
-      proposalSentDate: null,
-      startDate: null,
-      completionDate: null,
-      notes: 'Initial consultation completed. Client very interested. Proposal in development.',
-      createdAt: '2024-01-28'
-    }
-  ])
+  const [projects, setProjects] = useState([])
 
   const [newProject, setNewProject] = useState({
     clientName: '',
@@ -544,83 +448,135 @@ const ProjectPipeline = () => {
 
         {/* Kanban Board View */}
         {viewMode === 'kanban' && (
-          <div style={{ display: 'flex', gap: 'var(--spacing-6)', overflowX: 'auto' }}>
-            {Object.keys(statusConfig).map(status => (
-              <KanbanColumn
-                key={status}
-                status={status}
-                projects={projects.filter(p => p.status === status)}
-              />
-            ))}
-          </div>
+          projects.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>📈</div>
+              <h3 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-2)' }}>No Projects Yet</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)' }}>
+                Start building your project pipeline by adding your first project.
+              </p>
+              <button
+                onClick={() => setShowAddForm(true)}
+                style={{
+                  padding: 'var(--spacing-3) var(--spacing-6)',
+                  backgroundColor: 'var(--secondary-blue)',
+                  color: 'var(--white)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  fontSize: 'var(--font-size-base)',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ➕ Add Your First Project
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 'var(--spacing-6)', overflowX: 'auto' }}>
+              {Object.keys(statusConfig).map(status => (
+                <KanbanColumn
+                  key={status}
+                  status={status}
+                  projects={projects.filter(p => p.status === status)}
+                />
+              ))}
+            </div>
+          )
         )}
 
         {/* List View */}
         {viewMode === 'list' && (
-          <div className="card">
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.2)' }}>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Client</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Project</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Status</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Value</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Deposit</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Final Payment</th>
-                    <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {projects.map(project => (
-                    <tr key={project.id} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
-                      <td style={{ padding: 'var(--spacing-4)' }}>
-                        <div>
-                          <div style={{ fontWeight: '600', color: 'var(--white)' }}>{project.clientName}</div>
-                          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>{project.clientEmail}</div>
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)' }}>
-                        <div>
-                          <div style={{ fontWeight: '600', color: 'var(--white)' }}>{project.projectTitle}</div>
-                          <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>{project.projectDescription}</div>
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)' }}>
-                        <div style={{
-                          padding: 'var(--spacing-1) var(--spacing-2)',
-                          borderRadius: 'var(--radius-sm)',
-                          backgroundColor: statusConfig[project.status].bgColor,
-                          color: statusConfig[project.status].color,
-                          fontSize: 'var(--font-size-sm)',
-                          fontWeight: '600',
-                          display: 'inline-block'
-                        }}>
-                          {statusConfig[project.status].label}
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)', color: 'var(--white)', fontWeight: '600' }}>
-                        ${project.estimatedValue.toLocaleString()}
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)' }}>
-                        <div style={{ color: project.depositReceived ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
-                          {project.depositReceived ? '✓ Received' : 'Pending'}
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)' }}>
-                        <div style={{ color: project.finalPaymentReceived ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
-                          {project.finalPaymentReceived ? '✓ Received' : 'Pending'}
-                        </div>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-4)', color: 'var(--text-secondary)' }}>
-                        {new Date(project.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          projects.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-8)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>📈</div>
+              <h3 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-2)' }}>No Projects Yet</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)' }}>
+                Start building your project pipeline by adding your first project.
+              </p>
+              <button
+                onClick={() => setShowAddForm(true)}
+                style={{
+                  padding: 'var(--spacing-3) var(--spacing-6)',
+                  backgroundColor: 'var(--secondary-blue)',
+                  color: 'var(--white)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  fontSize: 'var(--font-size-base)',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ➕ Add Your First Project
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className="card">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.2)' }}>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Client</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Project</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Status</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Value</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Deposit</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Final Payment</th>
+                      <th style={{ padding: 'var(--spacing-4)', textAlign: 'left', color: 'var(--text-secondary)' }}>Created</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.map(project => (
+                      <tr key={project.id} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                        <td style={{ padding: 'var(--spacing-4)' }}>
+                          <div>
+                            <div style={{ fontWeight: '600', color: 'var(--white)' }}>{project.clientName}</div>
+                            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>{project.clientEmail}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)' }}>
+                          <div>
+                            <div style={{ fontWeight: '600', color: 'var(--white)' }}>{project.projectTitle}</div>
+                            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>{project.projectDescription}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)' }}>
+                          <div style={{
+                            padding: 'var(--spacing-1) var(--spacing-2)',
+                            borderRadius: 'var(--radius-sm)',
+                            backgroundColor: statusConfig[project.status].bgColor,
+                            color: statusConfig[project.status].color,
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: '600',
+                            display: 'inline-block'
+                          }}>
+                            {statusConfig[project.status].label}
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)', color: 'var(--white)', fontWeight: '600' }}>
+                          ${project.estimatedValue.toLocaleString()}
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)' }}>
+                          <div style={{ color: project.depositReceived ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
+                            {project.depositReceived ? '✓ Received' : 'Pending'}
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)' }}>
+                          <div style={{ color: project.finalPaymentReceived ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
+                            {project.finalPaymentReceived ? '✓ Received' : 'Pending'}
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--spacing-4)', color: 'var(--text-secondary)' }}>
+                          {new Date(project.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>

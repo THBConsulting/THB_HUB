@@ -1,7 +1,19 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+
+// Import module components
+import PricingSOW from './PricingSOW'
+import ProjectPipeline from './ProjectPipeline'
+import BusinessStrategy from './BusinessStrategy'
+import MonthlyExpenses from './MonthlyExpenses'
+import ActionItems from './ActionItems'
+import SpeakingOpportunities from './SpeakingOpportunities'
+import AIToolsResearch from './AIToolsResearch'
+import CalendarOverview from './CalendarOverview'
 
 const Dashboard = () => {
+  const location = useLocation()
+  
   const modules = [
     {
       id: 'pricing-sow',
@@ -11,7 +23,8 @@ const Dashboard = () => {
       path: '/pricing-sow',
       metric: '12 Active Quotes',
       status: 'active',
-      priority: 'high'
+      priority: 'high',
+      component: PricingSOW
     },
     {
       id: 'project-pipeline',
@@ -21,7 +34,8 @@ const Dashboard = () => {
       path: '/project-pipeline',
       metric: '$45K Pipeline',
       status: 'active',
-      priority: 'high'
+      priority: 'high',
+      component: ProjectPipeline
     },
     {
       id: 'business-strategy',
@@ -31,7 +45,8 @@ const Dashboard = () => {
       path: '/business-strategy',
       metric: '85% Goal Progress',
       status: 'on-track',
-      priority: 'medium'
+      priority: 'medium',
+      component: BusinessStrategy
     },
     {
       id: 'monthly-expenses',
@@ -41,7 +56,8 @@ const Dashboard = () => {
       path: '/monthly-expenses',
       metric: '$8.2K This Month',
       status: 'active',
-      priority: 'medium'
+      priority: 'medium',
+      component: MonthlyExpenses
     },
     {
       id: 'action-items',
@@ -51,7 +67,8 @@ const Dashboard = () => {
       path: '/action-items',
       metric: '23 Pending',
       status: 'attention',
-      priority: 'high'
+      priority: 'high',
+      component: ActionItems
     },
     {
       id: 'speaking-opportunities',
@@ -61,7 +78,8 @@ const Dashboard = () => {
       path: '/speaking-opportunities',
       metric: '5 Upcoming',
       status: 'active',
-      priority: 'low'
+      priority: 'low',
+      component: SpeakingOpportunities
     },
     {
       id: 'ai-tools-research',
@@ -71,7 +89,8 @@ const Dashboard = () => {
       path: '/ai-tools-research',
       metric: '47 Tools Tracked',
       status: 'active',
-      priority: 'low'
+      priority: 'low',
+      component: AIToolsResearch
     },
     {
       id: 'calendar-overview',
@@ -81,7 +100,8 @@ const Dashboard = () => {
       path: '/calendar-overview',
       metric: '12 Events Today',
       status: 'active',
-      priority: 'medium'
+      priority: 'medium',
+      component: CalendarOverview
     }
   ]
 
@@ -104,87 +124,91 @@ const Dashboard = () => {
     }
   }
 
+  const isActive = (path) => location.pathname === path
+
   return (
     <div style={{ 
-      backgroundColor: '#0F172A',
-      minHeight: '100vh',
-      padding: '0'
+      display: 'flex',
+      height: '100vh',
+      backgroundColor: '#0F172A'
     }}>
-      {/* Hero Section */}
+      
+      {/* Left Sidebar */}
       <div style={{
-        background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-        padding: '4rem 2rem',
-        textAlign: 'center',
-        borderBottom: '1px solid #334155'
+        width: '320px',
+        backgroundColor: '#1E293B',
+        borderRight: '1px solid #334155',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowY: 'auto'
       }}>
-        <h1 style={{
-          fontSize: '4rem',
-          fontWeight: '900',
-          color: '#F8FAFC',
-          margin: '0 0 1rem 0',
-          letterSpacing: '-0.02em'
-        }}>
-          THB Operations Hub
-        </h1>
-        <p style={{
-          fontSize: '1.5rem',
-          color: '#94A3B8',
-          margin: '0',
-          fontWeight: '400'
-        }}>
-          Business Management Dashboard
-        </p>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ padding: '3rem 2rem', maxWidth: '1400px', margin: '0 auto' }}>
         
-        {/* Key Metrics Bar */}
+        {/* Sidebar Header */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '3rem',
-          padding: '1.5rem',
-          backgroundColor: '#1E293B',
-          borderRadius: '12px',
-          border: '1px solid #334155'
+          padding: '2rem 1.5rem',
+          borderBottom: '1px solid #334155',
+          backgroundColor: '#0F172A'
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#A855F7', marginBottom: '0.5rem' }}>$45K</div>
-            <div style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '500' }}>Total Pipeline</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#60A5FA', marginBottom: '0.5rem' }}>12</div>
-            <div style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '500' }}>Active Projects</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#F59E0B', marginBottom: '0.5rem' }}>23</div>
-            <div style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '500' }}>Pending Actions</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#10B981', marginBottom: '0.5rem' }}>85%</div>
-            <div style={{ fontSize: '0.875rem', color: '#94A3B8', fontWeight: '500' }}>Goal Progress</div>
-          </div>
-        </div>
-
-        {/* Modules Section */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{
-            fontSize: '2rem',
+          <h1 style={{
+            fontSize: '1.5rem',
             fontWeight: '700',
             color: '#F8FAFC',
-            marginBottom: '1.5rem',
-            borderBottom: '2px solid #A855F7',
-            paddingBottom: '0.5rem',
-            display: 'inline-block'
+            margin: '0 0 0.5rem 0',
+            letterSpacing: '-0.01em'
           }}>
-            Operations Modules
-          </h2>
+            THB Operations Hub
+          </h1>
+          <p style={{
+            fontSize: '0.875rem',
+            color: '#94A3B8',
+            margin: '0'
+          }}>
+            Business Management Dashboard
+          </p>
         </div>
 
-        {/* Modules Grid - Clean List Style */}
-        <div style={{ display: 'grid', gap: '1rem' }}>
+        {/* Quick Stats */}
+        <div style={{
+          padding: '1.5rem',
+          borderBottom: '1px solid #334155'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '1rem'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#A855F7' }}>$45K</div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Pipeline</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#60A5FA' }}>12</div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Projects</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#F59E0B' }}>23</div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Actions</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10B981' }}>85%</div>
+              <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Progress</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modules List */}
+        <div style={{ flex: 1, padding: '1rem 0' }}>
+          <div style={{
+            padding: '0 1rem 1rem 1rem',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            color: '#94A3B8',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Operations Modules
+          </div>
+          
           {modules.map((module, index) => (
             <Link
               key={module.id}
@@ -194,132 +218,189 @@ const Dashboard = () => {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '1.5rem',
-                backgroundColor: '#1E293B',
+                padding: '0.75rem 1.5rem',
+                margin: '0.25rem 1rem',
                 borderRadius: '8px',
-                border: '1px solid #334155',
+                backgroundColor: isActive(module.path) ? '#334155' : 'transparent',
+                border: isActive(module.path) ? '1px solid #A855F7' : '1px solid transparent',
                 transition: 'all 0.2s ease',
                 cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#334155'
-                e.currentTarget.style.borderColor = '#A855F7'
-                e.currentTarget.style.transform = 'translateX(8px)'
+                if (!isActive(module.path)) {
+                  e.currentTarget.style.backgroundColor = '#334155'
+                  e.currentTarget.style.borderColor = '#475569'
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#1E293B'
-                e.currentTarget.style.borderColor = '#334155'
-                e.currentTarget.style.transform = 'translateX(0)'
+                if (!isActive(module.path)) {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                  e.currentTarget.style.borderColor = 'transparent'
+                }
               }}
               >
                 
-                {/* Module Number */}
-                <div style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#A855F7',
-                  marginRight: '1.5rem',
-                  minWidth: '3rem',
-                  textAlign: 'center'
-                }}>
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-
                 {/* Icon */}
                 <div style={{
-                  fontSize: '2rem',
-                  marginRight: '1.5rem',
-                  minWidth: '3rem',
+                  fontSize: '1.25rem',
+                  marginRight: '0.75rem',
+                  minWidth: '1.5rem',
                   textAlign: 'center'
                 }}>
                   {module.icon}
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <h3 style={{
-                      fontSize: '1.25rem',
-                      fontWeight: '600',
-                      color: '#F8FAFC',
-                      margin: '0',
-                      marginRight: '1rem'
-                    }}>
-                      {module.title}
-                    </h3>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      color: getPriorityColor(module.priority),
-                      backgroundColor: `${getPriorityColor(module.priority)}20`,
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      {module.priority}
-                    </div>
-                  </div>
-                  <p style={{
-                    fontSize: '0.875rem',
-                    color: '#94A3B8',
-                    margin: '0',
-                    lineHeight: '1.4'
-                  }}>
-                    {module.description}
-                  </p>
-                </div>
-
-                {/* Status and Metric */}
-                <div style={{ textAlign: 'right', minWidth: '200px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontSize: '1rem',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
-                    color: '#F8FAFC',
-                    marginBottom: '0.25rem'
+                    color: isActive(module.path) ? '#F8FAFC' : '#E2E8F0',
+                    marginBottom: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
-                    {module.metric}
+                    {module.title}
                   </div>
                   <div style={{
                     fontSize: '0.75rem',
-                    color: getStatusColor(module.status),
-                    fontWeight: '500',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
+                    color: '#94A3B8',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
-                    {module.status.replace('-', ' ')}
+                    {module.metric}
                   </div>
                 </div>
 
-                {/* Arrow */}
+                {/* Status Indicator */}
                 <div style={{
-                  fontSize: '1.5rem',
-                  color: '#94A3B8',
-                  marginLeft: '1rem'
-                }}>
-                  →
-                </div>
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: getStatusColor(module.status),
+                  marginLeft: '0.5rem',
+                  flexShrink: 0
+                }} />
               </div>
             </Link>
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Sidebar Footer */}
         <div style={{
-          marginTop: '3rem',
-          padding: '2rem',
-          backgroundColor: '#1E293B',
-          borderRadius: '12px',
-          border: '1px solid #334155',
-          textAlign: 'center'
+          padding: '1rem 1.5rem',
+          borderTop: '1px solid #334155',
+          backgroundColor: '#0F172A'
         }}>
+          <div style={{
+            fontSize: '0.75rem',
+            color: '#94A3B8',
+            textAlign: 'center'
+          }}>
+            Last updated: {new Date().toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Main Content Area */}
+      <div style={{
+        flex: 1,
+        backgroundColor: '#0F172A',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        
+        {/* Main Content Header */}
+        <div style={{
+          padding: '2rem 2rem 1rem 2rem',
+          borderBottom: '1px solid #334155',
+          backgroundColor: '#1E293B'
+        }}>
+          <h2 style={{
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: '#F8FAFC',
+            margin: '0 0 0.5rem 0'
+          }}>
+            {modules.find(m => m.path === location.pathname)?.title || 'Dashboard Overview'}
+          </h2>
           <p style={{
-            fontSize: '0.875rem',
+            fontSize: '1rem',
             color: '#94A3B8',
             margin: '0'
           }}>
-            Last updated: {new Date().toLocaleDateString()} • All systems operational
+            {modules.find(m => m.path === location.pathname)?.description || 'Select a module from the sidebar to get started'}
           </p>
+        </div>
+
+        {/* Main Content */}
+        <div style={{
+          flex: 1,
+          padding: '2rem',
+          overflowY: 'auto'
+        }}>
+          {location.pathname === '/' ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                fontSize: '4rem',
+                marginBottom: '1rem'
+              }}>
+                🚀
+              </div>
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                color: '#F8FAFC',
+                marginBottom: '0.5rem'
+              }}>
+                Welcome to THB Operations Hub
+              </h3>
+              <p style={{
+                fontSize: '1rem',
+                color: '#94A3B8',
+                maxWidth: '400px',
+                lineHeight: '1.5'
+              }}>
+                Select any module from the sidebar to start managing your business operations. Each module is designed to streamline your workflow and provide actionable insights.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              backgroundColor: '#1E293B',
+              borderRadius: '12px',
+              padding: '2rem',
+              border: '1px solid #334155',
+              minHeight: '400px'
+            }}>
+              {(() => {
+                const currentModule = modules.find(m => m.path === location.pathname)
+                if (currentModule && currentModule.component) {
+                  const ModuleComponent = currentModule.component
+                  return <ModuleComponent />
+                }
+                return (
+                  <div style={{
+                    fontSize: '1rem',
+                    color: '#94A3B8',
+                    textAlign: 'center',
+                    padding: '2rem'
+                  }}>
+                    Module content will be loaded here. The individual module pages will be displayed in this area.
+                  </div>
+                )
+              })()}
+            </div>
+          )}
         </div>
       </div>
     </div>

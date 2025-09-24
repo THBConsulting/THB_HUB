@@ -1,7 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
-import Navigation from './components/Navigation'
 
 // Import module pages
 import PricingSOW from './pages/PricingSOW'
@@ -17,20 +16,17 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Navigation />
-        <main>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/pricing-sow" element={<PricingSOW />} />
-            <Route path="/project-pipeline" element={<ProjectPipeline />} />
-            <Route path="/business-strategy" element={<BusinessStrategy />} />
-            <Route path="/monthly-expenses" element={<MonthlyExpenses />} />
-            <Route path="/action-items" element={<ActionItems />} />
-            <Route path="/speaking-opportunities" element={<SpeakingOpportunities />} />
-            <Route path="/ai-tools-research" element={<AIToolsResearch />} />
-            <Route path="/calendar-overview" element={<CalendarOverview />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/pricing-sow" element={<Dashboard />} />
+          <Route path="/project-pipeline" element={<Dashboard />} />
+          <Route path="/business-strategy" element={<Dashboard />} />
+          <Route path="/monthly-expenses" element={<Dashboard />} />
+          <Route path="/action-items" element={<Dashboard />} />
+          <Route path="/speaking-opportunities" element={<Dashboard />} />
+          <Route path="/ai-tools-research" element={<Dashboard />} />
+          <Route path="/calendar-overview" element={<Dashboard />} />
+        </Routes>
       </div>
     </Router>
   )

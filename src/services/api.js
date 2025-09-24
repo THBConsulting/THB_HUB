@@ -284,6 +284,104 @@ If no action items are found, return an empty array.`
     });
 
     return actionItems;
+  },
+
+  async analyzeFeasibility(assessmentData) {
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.warn('OpenAI API key not found');
+      return this.generateFallbackFeasibility(assessmentData);
+    }
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{
+            role: 'user',
+            content: `Analyze the feasibility of AI automation opportunities for this organization. Provide detailed feasibility scores and recommendations for each area.
+
+Organization Context:
+${assessmentData[0] ? `
+- Organization Type: ${assessmentData[0].organizationType || 'Not specified'}
+- Team Size: ${assessmentData[0].teamSize || 'Not specified'}
+- Tech Comfort Level: ${assessmentData[0].techComfortLevel || 'Not specified'}
+- Primary Goal: ${assessmentData[0].primaryGoal || 'Not specified'}
+` : 'No context provided'}
+
+Opportunity Areas to Analyze:
+${assessmentData.map(area => `
+Area: ${area.area}
+Description: ${area.description}
+Current Activities: ${area.currentActivities}
+Pain Points: ${area.painPoints}
+`).join('\n')}
+
+For each opportunity area, provide a JSON response with:
+{
+  "areas": [
+    {
+      "areaName": "exact area name",
+      "feasibility": "High|Medium|Low",
+      "explanation": "brief explanation of what's possible",
+      "limitations": "potential limitations or workarounds needed",
+      "complexity": "Low|Medium|High",
+      "recommendations": ["specific", "actionable", "recommendations"]
+    }
+  ]
+}
+
+Consider factors like:
+- Organization size and resources
+- Tech comfort level
+- Current pain points
+- Implementation complexity
+- ROI potential
+- Timeline feasibility`
+          }],
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      try {
+        return JSON.parse(content);
+      } catch (parseError) {
+        return this.generateFallbackFeasibility(assessmentData);
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return this.generateFallbackFeasibility(assessmentData);
+    }
+  },
+
+  generateFallbackFeasibility(assessmentData) {
+    return {
+      areas: assessmentData.map(area => ({
+        areaName: area.area,
+        feasibility: 'Medium',
+        explanation: `AI automation is feasible for ${area.area.toLowerCase()} based on your current activities and pain points.`,
+        limitations: 'May require additional training and gradual implementation.',
+        complexity: 'Medium',
+        recommendations: [
+          'Start with simple automation tasks',
+          'Provide team training on new tools',
+          'Implement gradually to ensure adoption'
+        ]
+      }))
+    };
   }
 };
 

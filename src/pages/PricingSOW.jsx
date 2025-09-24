@@ -53,6 +53,12 @@ const PricingSOW = () => {
   const [sowDocument, setSowDocument] = useState('')
   const [isGeneratingSOW, setIsGeneratingSOW] = useState(false)
   const [expandedCategories, setExpandedCategories] = useState({})
+  
+  // Feasibility Analysis State
+  const [feasibilityAnalysis, setFeasibilityAnalysis] = useState(null)
+  const [isAnalyzingFeasibility, setIsAnalyzingFeasibility] = useState(false)
+  const [excludedAreas, setExcludedAreas] = useState([])
+  const [expandedFeasibility, setExpandedFeasibility] = useState({})
 
   const aiAssessmentCategories = [
     {
@@ -196,6 +202,76 @@ const PricingSOW = () => {
              assessment.interested
     }).length
     return Math.round((completedCategories / totalCategories) * 100)
+  }
+
+  const analyzeFeasibility = async () => {
+    setIsAnalyzingFeasibility(true)
+    
+    try {
+      // Get interested areas only
+      const interestedAreas = aiAssessmentCategories.filter(category => {
+        const assessment = formData.aiAssessment[category.id]
+        return assessment.interested && (
+          assessment.currentActivities.trim() !== '' || 
+          assessment.painPoints.trim() !== ''
+        )
+      })
+
+      if (interestedAreas.length === 0) {
+        alert('Please complete at least one opportunity area and mark it as interested.')
+        setIsAnalyzingFeasibility(false)
+        return
+      }
+
+      // Prepare assessment data for AI analysis
+      const assessmentData = interestedAreas.map(category => {
+        const assessment = formData.aiAssessment[category.id]
+        return {
+          area: category.title,
+          description: category.description,
+          currentActivities: assessment.currentActivities,
+          painPoints: assessment.painPoints,
+          organizationType: formData.clientContext.organizationType,
+          teamSize: formData.clientContext.teamSize,
+          techComfortLevel: formData.clientContext.techComfortLevel,
+          primaryGoal: formData.clientContext.primaryGoal
+        }
+      })
+
+      // Use OpenAI API for feasibility analysis
+      const feasibilityResult = await openAIAPI.analyzeFeasibility(assessmentData)
+      setFeasibilityAnalysis(feasibilityResult)
+      
+    } catch (error) {
+      console.error('Feasibility analysis failed:', error)
+      alert('Failed to analyze feasibility. Please try again.')
+    }
+    
+    setIsAnalyzingFeasibility(false)
+  }
+
+  const toggleFeasibilityExpansion = (areaId) => {
+    setExpandedFeasibility(prev => ({
+      ...prev,
+      [areaId]: !prev[areaId]
+    }))
+  }
+
+  const toggleAreaExclusion = (areaId) => {
+    setExcludedAreas(prev => 
+      prev.includes(areaId) 
+        ? prev.filter(id => id !== areaId)
+        : [...prev, areaId]
+    )
+  }
+
+  const getFeasibilityColor = (feasibility) => {
+    switch (feasibility.toLowerCase()) {
+      case 'high': return '#10B981' // Green
+      case 'medium': return '#F59E0B' // Yellow
+      case 'low': return '#EF4444' // Red
+      default: return '#6B7280' // Gray
+    }
   }
 
   const handleFeatureToggle = (feature) => {
@@ -737,6 +813,198 @@ This SOW is valid for 30 days from the date of issue.
                 )
               })}
             </div>
+
+            {/* Analyze Opportunities Button */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <button
+                onClick={analyzeFeasibility}
+                disabled={isAnalyzingFeasibility || getAssessmentProgress() === 0}
+                style={{
+                  width: '100%',
+                  padding: 'var(--spacing-4)',
+                  backgroundColor: 'var(--secondary-blue)',
+                  color: 'var(--white)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  fontSize: 'var(--font-size-lg)',
+                  fontWeight: '600',
+                  cursor: isAnalyzingFeasibility ? 'not-allowed' : 'pointer',
+                  opacity: (isAnalyzingFeasibility || getAssessmentProgress() === 0) ? 0.6 : 1,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {isAnalyzingFeasibility ? '🤖 Analyzing Opportunities...' : '🔍 Analyze Opportunities'}
+              </button>
+            </div>
+
+            {/* Feasibility Analysis Results */}
+            {feasibilityAnalysis && (
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>
+                  📊 Feasibility Analysis Results
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                  AI-powered analysis of your opportunity areas with feasibility scores and recommendations.
+                </p>
+
+                {feasibilityAnalysis.areas && feasibilityAnalysis.areas.map((area, index) => {
+                  const isExpanded = expandedFeasibility[area.areaName]
+                  const isExcluded = excludedAreas.includes(area.areaName)
+                  const feasibilityColor = getFeasibilityColor(area.feasibility)
+
+                  return (
+                    <div key={index} style={{
+                      marginBottom: 'var(--spacing-4)',
+                      border: '1px solid rgba(148, 163, 184, 0.2)',
+                      borderRadius: 'var(--radius-lg)',
+                      overflow: 'hidden',
+                      opacity: isExcluded ? 0.6 : 1,
+                      backgroundColor: isExcluded ? 'rgba(148, 163, 184, 0.05)' : 'transparent'
+                    }}>
+                      <div
+                        onClick={() => toggleFeasibilityExpansion(area.areaName)}
+                        style={{
+                          padding: 'var(--spacing-4)',
+                          backgroundColor: isExcluded ? 'rgba(148, 163, 184, 0.05)' : 'rgba(148, 163, 184, 0.05)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.2)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+                          <div style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: feasibilityColor
+                          }} />
+                          <div>
+                            <h4 style={{ 
+                              fontSize: 'var(--font-size-base)', 
+                              fontWeight: '600', 
+                              color: 'var(--white)',
+                              margin: '0 0 var(--spacing-1) 0'
+                            }}>
+                              {area.areaName}
+                            </h4>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                              <span style={{ 
+                                fontSize: 'var(--font-size-sm)', 
+                                color: feasibilityColor,
+                                fontWeight: '600',
+                                textTransform: 'uppercase'
+                              }}>
+                                {area.feasibility} Feasibility
+                              </span>
+                              <span style={{ 
+                                fontSize: 'var(--font-size-sm)', 
+                                color: 'var(--text-secondary)'
+                              }}>
+                                • {area.complexity} Complexity
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleAreaExclusion(area.areaName)
+                            }}
+                            style={{
+                              padding: 'var(--spacing-1) var(--spacing-2)',
+                              backgroundColor: isExcluded ? 'var(--primary-purple)' : 'transparent',
+                              color: isExcluded ? 'var(--white)' : 'var(--text-secondary)',
+                              border: '1px solid rgba(148, 163, 184, 0.3)',
+                              borderRadius: 'var(--radius-sm)',
+                              fontSize: 'var(--font-size-xs)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {isExcluded ? 'Included' : 'Exclude'}
+                          </button>
+                          <span style={{ 
+                            fontSize: 'var(--font-size-lg)',
+                            color: 'var(--text-secondary)',
+                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease'
+                          }}>
+                            ▼
+                          </span>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ padding: 'var(--spacing-4)' }}>
+                          <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                            <h5 style={{ 
+                              fontSize: 'var(--font-size-sm)', 
+                              fontWeight: '600', 
+                              color: 'var(--white)',
+                              margin: '0 0 var(--spacing-2) 0'
+                            }}>
+                              What's Possible
+                            </h5>
+                            <p style={{ 
+                              fontSize: 'var(--font-size-sm)', 
+                              color: 'var(--text-primary)',
+                              margin: '0',
+                              lineHeight: '1.5'
+                            }}>
+                              {area.explanation}
+                            </p>
+                          </div>
+
+                          <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                            <h5 style={{ 
+                              fontSize: 'var(--font-size-sm)', 
+                              fontWeight: '600', 
+                              color: 'var(--white)',
+                              margin: '0 0 var(--spacing-2) 0'
+                            }}>
+                              Limitations & Considerations
+                            </h5>
+                            <p style={{ 
+                              fontSize: 'var(--font-size-sm)', 
+                              color: 'var(--text-primary)',
+                              margin: '0',
+                              lineHeight: '1.5'
+                            }}>
+                              {area.limitations}
+                            </p>
+                          </div>
+
+                          <div>
+                            <h5 style={{ 
+                              fontSize: 'var(--font-size-sm)', 
+                              fontWeight: '600', 
+                              color: 'var(--white)',
+                              margin: '0 0 var(--spacing-2) 0'
+                            }}>
+                              Recommendations
+                            </h5>
+                            <ul style={{ margin: '0', paddingLeft: 'var(--spacing-4)' }}>
+                              {area.recommendations.map((rec, recIndex) => (
+                                <li key={recIndex} style={{ 
+                                  fontSize: 'var(--font-size-sm)', 
+                                  color: 'var(--text-primary)',
+                                  marginBottom: 'var(--spacing-1)',
+                                  lineHeight: '1.5'
+                                }}>
+                                  {rec}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
             {/* Project Description */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>

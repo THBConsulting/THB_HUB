@@ -2345,15 +2345,43 @@ This SOW is valid for 30 days from the date of issue.
               )}
             </div>
             
-            {!analysis ? (
+            {!documentToDisplay ? (
               <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--text-secondary)' }}>
-                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>🤖</div>
-                <p>Complete the form and click "Analyze Project" to get AI-powered pricing recommendations and complexity analysis.</p>
+                <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>📄</div>
+                <p>Complete the workflow steps to generate professional documents that you can copy and paste into Google Docs.</p>
+                <div style={{ marginTop: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                  <p><strong>Available Documents:</strong></p>
+                  <p>• Feasibility Analysis - After analyzing opportunities</p>
+                  <p>• Client Document - After generating client overview</p>
+                  <p>• Pricing Breakdown - After calculating pricing</p>
+                  <p>• Statement of Work - After generating SOW</p>
+                </div>
               </div>
             ) : (
-              <div>
-                {/* Complexity Score */}
-                <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div style={{
+                backgroundColor: 'var(--white)',
+                color: 'var(--black)',
+                padding: 'var(--spacing-6)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                maxHeight: '70vh',
+                overflowY: 'auto',
+                fontFamily: 'monospace',
+                fontSize: 'var(--font-size-sm)',
+                lineHeight: '1.6',
+                whiteSpace: 'pre-wrap'
+              }}>
+                {documentToDisplay}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default PricingSOW
                   <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>Project Complexity</h3>
                   <div style={{
                     backgroundColor: 'var(--dark-black)',

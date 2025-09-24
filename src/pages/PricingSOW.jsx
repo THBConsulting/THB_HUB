@@ -242,7 +242,9 @@ const PricingSOW = () => {
           organizationType: formData.clientContext.organizationType,
           teamSize: formData.clientContext.teamSize,
           techComfortLevel: formData.clientContext.techComfortLevel,
-          primaryGoal: formData.clientContext.primaryGoal
+          primaryGoal: formData.clientContext.primaryGoal,
+          timeline: formData.timeline,
+          budgetRange: formData.budgetRange
         }
       })
 
@@ -873,9 +875,9 @@ This SOW is valid for 30 days from the date of issue.
               <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>
                 🏢 Client Context
               </h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
-                Help us understand your organization to provide better recommendations and pricing.
-              </p>
+                   <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
+                     Organization details to provide better recommendations and pricing.
+                   </p>
 
               {/* Organization Type */}
               <div style={{ marginBottom: 'var(--spacing-4)' }}>
@@ -1022,6 +1024,56 @@ This SOW is valid for 30 days from the date of issue.
                 <option value="">Select client type</option>
                 {clientTypes.map(type => (
                   <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Timeline Requirements */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                Timeline Requirements
+              </label>
+              <select
+                value={formData.timeline}
+                onChange={(e) => handleInputChange('timeline', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: 'var(--spacing-3)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--font-size-sm)'
+                }}
+              >
+                <option value="">Select timeline</option>
+                {timelineOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Budget Range */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
+                Budget Range (if known)
+              </label>
+              <select
+                value={formData.budgetRange}
+                onChange={(e) => handleInputChange('budgetRange', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: 'var(--spacing-3)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--font-size-sm)'
+                }}
+              >
+                <option value="">Select budget range</option>
+                {budgetRanges.map(range => (
+                  <option key={range.value} value={range.value}>{range.label}</option>
                 ))}
               </select>
             </div>
@@ -2016,55 +2068,6 @@ This SOW is valid for 30 days from the date of issue.
 
 
 
-            {/* Timeline */}
-            <div style={{ marginBottom: 'var(--spacing-6)' }}>
-              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
-                Timeline Requirements
-              </label>
-              <select
-                value={formData.timeline}
-                onChange={(e) => handleInputChange('timeline', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: 'var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(148, 163, 184, 0.3)',
-                  backgroundColor: 'var(--card-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'var(--font-size-sm)'
-                }}
-              >
-                <option value="">Select timeline</option>
-                {timelineOptions.map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Budget Range */}
-            <div style={{ marginBottom: 'var(--spacing-6)' }}>
-              <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', color: 'var(--text-secondary)' }}>
-                Budget Range (if known)
-              </label>
-              <select
-                value={formData.budgetRange}
-                onChange={(e) => handleInputChange('budgetRange', e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: 'var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid rgba(148, 163, 184, 0.3)',
-                  backgroundColor: 'var(--card-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: 'var(--font-size-sm)'
-                }}
-              >
-                <option value="">Select budget range</option>
-                {budgetRanges.map(range => (
-                  <option key={range.value} value={range.value}>{range.label}</option>
-                ))}
-              </select>
-            </div>
 
             {/* Analyze Button */}
             <button

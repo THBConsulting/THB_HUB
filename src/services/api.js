@@ -313,6 +313,8 @@ ${assessmentData[0] ? `
 - Team Size: ${assessmentData[0].teamSize || 'Not specified'}
 - Tech Comfort Level: ${assessmentData[0].techComfortLevel || 'Not specified'}
 - Primary Goal: ${assessmentData[0].primaryGoal || 'Not specified'}
+- Timeline Requirements: ${assessmentData[0].timeline || 'Not specified'}
+- Budget Range: ${assessmentData[0].budgetRange || 'Not specified'}
 ` : 'No context provided'}
 
 Opportunity Areas to Analyze:

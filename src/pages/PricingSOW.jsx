@@ -16,32 +16,13 @@ const PricingSOW = () => {
     },
     // AI Opportunity Assessment
     aiAssessment: {
-      contentCommunication: {
-        currentActivities: '',
-        painPoints: '',
-        interested: false
-      },
-      dataAnalysis: {
-        currentActivities: '',
-        painPoints: '',
-        interested: false
-      },
-      processAutomation: {
-        currentActivities: '',
-        painPoints: '',
-        interested: false
-      },
-      informationManagement: {
-        currentActivities: '',
-        painPoints: '',
-        interested: false
-      },
-      stakeholderEngagement: {
-        currentActivities: '',
-        painPoints: '',
-        interested: false
-      }
+      contentCommunication: [],
+      dataAnalysis: [],
+      processAutomation: [],
+      informationManagement: [],
+      stakeholderEngagement: []
     },
+    discoveryNotes: '',
     timeline: '',
     budgetRange: ''
   })
@@ -82,38 +63,9 @@ const PricingSOW = () => {
   const [sowPreviewMode, setSowPreviewMode] = useState(false)
   const [sowTemplates, setSowTemplates] = useState([])
 
-  const aiAssessmentCategories = [
-    {
-      id: 'contentCommunication',
-      title: 'Content & Communication',
-      description: 'Reports, emails, presentations, social media, newsletters',
-      icon: '📝'
-    },
-    {
-      id: 'dataAnalysis',
-      title: 'Data & Analysis',
-      description: 'Surveys, feedback collection, research, data visualization',
-      icon: '📊'
-    },
-    {
-      id: 'processAutomation',
-      title: 'Process Automation',
-      description: 'Repetitive tasks, approvals, scheduling, workflows',
-      icon: '⚙️'
-    },
-    {
-      id: 'informationManagement',
-      title: 'Information Management',
-      description: 'Document creation, knowledge bases, search, file organization',
-      icon: '📚'
-    },
-    {
-      id: 'stakeholderEngagement',
-      title: 'Stakeholder Engagement',
-      description: 'Forms, dashboards, communication hubs, member portals',
-      icon: '🤝'
-    }
-  ]
+  // Document Display State
+  const [currentDocumentType, setCurrentDocumentType] = useState(null) // 'feasibility', 'client', 'pricing', 'sow'
+  const [documentToDisplay, setDocumentToDisplay] = useState(null)
 
   // Client Context Options
   const organizationTypes = [
@@ -167,6 +119,74 @@ const PricingSOW = () => {
     { value: 'unknown', label: 'Not specified' }
   ]
 
+  const aiOpportunityCategories = {
+    contentCommunication: {
+      title: 'Content & Communication',
+      options: [
+        'Automated report generation',
+        'Email marketing automation',
+        'Social media content creation',
+        'Presentation template generation',
+        'Newsletter automation',
+        'Document formatting and branding',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    },
+    dataAnalysis: {
+      title: 'Data & Analysis',
+      options: [
+        'Survey data analysis and insights',
+        'Feedback categorization and sentiment',
+        'Data visualization dashboards',
+        'Research compilation and summaries',
+        'Performance metrics tracking',
+        'Trend analysis and reporting',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    },
+    processAutomation: {
+      title: 'Process Automation',
+      options: [
+        'Task scheduling and reminders',
+        'Approval workflows',
+        'Form processing and routing',
+        'Calendar coordination',
+        'File organization',
+        'Status tracking and notifications',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    },
+    informationManagement: {
+      title: 'Information Management',
+      options: [
+        'Knowledge base creation',
+        'Document search and retrieval',
+        'Content organization systems',
+        'FAQ automation',
+        'Resource libraries',
+        'Version control systems',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    },
+    stakeholderEngagement: {
+      title: 'Stakeholder Engagement',
+      options: [
+        'Interactive forms and surveys',
+        'Client/donor portals',
+        'Communication hubs',
+        'Event management tools',
+        'Feedback collection systems',
+        'Community engagement platforms',
+        'Client can\'t articulate specific needs but wants help in this area',
+        'Not applicable - this category doesn\'t apply to their work'
+      ]
+    }
+  }
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -194,6 +214,30 @@ const PricingSOW = () => {
     }))
   }
 
+  const handleAIAssessmentCheckbox = (category, option) => {
+    setFormData(prev => {
+      const currentOptions = prev.aiAssessment[category] || []
+      const isSelected = currentOptions.includes(option)
+      
+      let newOptions
+      if (isSelected) {
+        // Remove option
+        newOptions = currentOptions.filter(opt => opt !== option)
+      } else {
+        // Add option
+        newOptions = [...currentOptions, option]
+      }
+      
+      return {
+        ...prev,
+        aiAssessment: {
+          ...prev.aiAssessment,
+          [category]: newOptions
+        }
+      }
+    })
+  }
+
   const toggleCategoryExpansion = (categoryId) => {
     setExpandedCategories(prev => ({
       ...prev,
@@ -201,56 +245,52 @@ const PricingSOW = () => {
     }))
   }
 
-  const getAssessmentProgress = () => {
-    const totalCategories = aiAssessmentCategories.length
-    const completedCategories = aiAssessmentCategories.filter(category => {
-      const assessment = formData.aiAssessment[category.id]
-      return assessment.currentActivities.trim() !== '' || 
-             assessment.painPoints.trim() !== '' || 
-             assessment.interested
-    }).length
-    return Math.round((completedCategories / totalCategories) * 100)
-  }
-
   const analyzeFeasibility = async () => {
     setIsAnalyzingFeasibility(true)
     
     try {
-      // Get interested areas only
-      const interestedAreas = aiAssessmentCategories.filter(category => {
-        const assessment = formData.aiAssessment[category.id]
-        return assessment.interested && (
-          assessment.currentActivities.trim() !== '' || 
-          assessment.painPoints.trim() !== ''
+      // Get selected opportunities from each category
+      const selectedOpportunities = []
+      
+      Object.entries(aiOpportunityCategories).forEach(([categoryKey, category]) => {
+        const selectedOptions = formData.aiAssessment[categoryKey] || []
+        
+        // Filter out "Not applicable" and "Client can't articulate" options for analysis
+        const relevantOptions = selectedOptions.filter(option => 
+          !option.includes('Not applicable') && 
+          !option.includes('Client can\'t articulate')
         )
+        
+        if (relevantOptions.length > 0) {
+          selectedOpportunities.push({
+            area: category.title,
+            description: `Selected opportunities: ${relevantOptions.join(', ')}`,
+            selectedOptions: relevantOptions,
+            organizationType: formData.clientContext.organizationType,
+            teamSize: formData.clientContext.teamSize,
+            techComfortLevel: formData.clientContext.techComfortLevel,
+            primaryGoal: formData.clientContext.primaryGoal,
+            timeline: formData.timeline,
+            budgetRange: formData.budgetRange,
+            discoveryNotes: formData.discoveryNotes
+          })
+        }
       })
 
-      if (interestedAreas.length === 0) {
-        alert('Please complete at least one opportunity area and mark it as interested.')
+      if (selectedOpportunities.length === 0) {
+        alert('Please select at least one opportunity area to analyze.')
         setIsAnalyzingFeasibility(false)
         return
       }
 
-      // Prepare assessment data for AI analysis
-      const assessmentData = interestedAreas.map(category => {
-        const assessment = formData.aiAssessment[category.id]
-        return {
-          area: category.title,
-          description: category.description,
-          currentActivities: assessment.currentActivities,
-          painPoints: assessment.painPoints,
-          organizationType: formData.clientContext.organizationType,
-          teamSize: formData.clientContext.teamSize,
-          techComfortLevel: formData.clientContext.techComfortLevel,
-          primaryGoal: formData.clientContext.primaryGoal,
-          timeline: formData.timeline,
-          budgetRange: formData.budgetRange
-        }
-      })
-
       // Use OpenAI API for feasibility analysis
-      const feasibilityResult = await openAIAPI.analyzeFeasibility(assessmentData)
+      const feasibilityResult = await openAIAPI.analyzeFeasibility(selectedOpportunities)
       setFeasibilityAnalysis(feasibilityResult)
+      
+      // Set document for display
+      const formattedDoc = formatDocumentForCopy('feasibility', feasibilityResult)
+      setDocumentToDisplay(formattedDoc)
+      setCurrentDocumentType('feasibility')
       
     } catch (error) {
       console.error('Feasibility analysis failed:', error)
@@ -258,6 +298,249 @@ const PricingSOW = () => {
     }
     
     setIsAnalyzingFeasibility(false)
+  }
+
+  const hasSelectedOpportunities = () => {
+    return Object.values(formData.aiAssessment).some(options => 
+      options && options.length > 0 && 
+      options.some(option => 
+        !option.includes('Not applicable') && 
+        !option.includes('Client can\'t articulate')
+      )
+    )
+  }
+
+  const formatDocumentForCopy = (documentType, data) => {
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+
+    switch (documentType) {
+      case 'feasibility':
+        return formatFeasibilityDocument(data)
+      case 'client':
+        return formatClientDocument(data)
+      case 'pricing':
+        return formatPricingDocument(data)
+      case 'sow':
+        return formatSOWDocument(data)
+      default:
+        return ''
+    }
+  }
+
+  const formatFeasibilityDocument = (data) => {
+    if (!data || !data.areas) return ''
+    
+    let doc = `AI AUTOMATION FEASIBILITY ANALYSIS\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n\n`
+    doc += `CLIENT: ${formData.clientName || 'TBD'}\n`
+    doc += `ORGANIZATION: ${formData.clientContext.organizationType || 'Not specified'}\n\n`
+    doc += `EXECUTIVE SUMMARY\n`
+    doc += `This analysis evaluates the feasibility of AI automation opportunities for your organization based on your current activities, pain points, and organizational context.\n\n`
+    
+    doc += `OPPORTUNITY ANALYSIS\n\n`
+    
+    data.areas.forEach((area, index) => {
+      doc += `${index + 1}. ${area.areaName.toUpperCase()}\n`
+      doc += `   Feasibility: ${area.feasibility}\n`
+      doc += `   Complexity: ${area.complexity}\n\n`
+      doc += `   What's Possible:\n`
+      doc += `   ${area.explanation}\n\n`
+      
+      if (area.limitations) {
+        doc += `   Limitations & Considerations:\n`
+        doc += `   ${area.limitations}\n\n`
+      }
+      
+      if (area.recommendations && area.recommendations.length > 0) {
+        doc += `   Recommendations:\n`
+        area.recommendations.forEach(rec => {
+          doc += `   • ${rec}\n`
+        })
+        doc += `\n`
+      }
+      
+      doc += `${'='.repeat(60)}\n\n`
+    })
+    
+    doc += `NEXT STEPS\n`
+    doc += `Based on this analysis, we recommend focusing on the high-feasibility opportunities that align with your primary goal of ${formData.clientContext.primaryGoal || 'improving operational efficiency'}.\n\n`
+    doc += `Contact: THB Operations Hub\n`
+    doc += `Generated: ${currentDate}\n`
+    
+    return doc
+  }
+
+  const formatClientDocument = (data) => {
+    if (!data) return ''
+    
+    let doc = `AI AUTOMATION PROJECT OVERVIEW\n`
+    doc += `"What's Possible & Your Role"\n\n`
+    doc += `Client: ${formData.clientName || 'TBD'}\n`
+    doc += `Organization: ${formData.clientContext.organizationType || 'Not specified'}\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n\n`
+    
+    doc += `EXECUTIVE SUMMARY\n`
+    doc += `${data.executiveSummary}\n\n`
+    
+    doc += `RECOMMENDED AI SOLUTIONS\n`
+    doc += `${data.recommendedSolutions}\n\n`
+    
+    doc += `WHAT EACH SOLUTION WILL LOOK LIKE\n`
+    doc += `${data.solutionExamples}\n\n`
+    
+    doc += `YOUR ROLE & TIME INVESTMENT\n`
+    doc += `${data.clientRole}\n\n`
+    
+    doc += `TIMELINE EXPECTATIONS\n`
+    doc += `${data.timeline}\n\n`
+    
+    doc += `NEXT STEPS\n`
+    doc += `${data.nextSteps}\n\n`
+    
+    doc += `---\n`
+    doc += `This document outlines the AI automation opportunities we've identified for your organization. Please review and let us know if you have any questions or would like to proceed with implementation.\n\n`
+    doc += `THB Operations Hub\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n`
+    
+    return doc
+  }
+
+  const formatPricingDocument = (data) => {
+    if (!data) return ''
+    
+    let doc = `AI AUTOMATION PROJECT PRICING BREAKDOWN\n\n`
+    doc += `Client: ${formData.clientName || 'TBD'}\n`
+    doc += `Organization: ${formData.clientContext.organizationType || 'Not specified'}\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n\n`
+    
+    doc += `PRICING TIER: ${data.pricingTier}\n\n`
+    
+    doc += `INVESTMENT BREAKDOWN\n\n`
+    
+    doc += `1. DEVELOPMENT FEE\n`
+    doc += `   Range: $${data.developmentFee.min.toLocaleString()} - $${data.developmentFee.max.toLocaleString()}\n`
+    doc += `   Recommended: $${data.developmentFee.recommended.toLocaleString()}\n`
+    doc += `   ${data.developmentFee.explanation}\n\n`
+    
+    doc += `2. CONSULTING & SETUP\n`
+    doc += `   Hourly Rate: $${data.consultingSetup.hourlyRate}/hour\n`
+    doc += `   Estimated Hours: ${data.consultingSetup.estimatedHours} hours\n`
+    doc += `   Total Cost: $${data.consultingSetup.totalCost.toLocaleString()}\n`
+    doc += `   ${data.consultingSetup.breakdown}\n\n`
+    
+    doc += `3. ONGOING BACKEND COSTS\n`
+    doc += `   Monthly Fee: $${data.ongoingCosts.monthlyFee}/month\n`
+    doc += `   Annual Fee: $${data.ongoingCosts.annualFee}/year\n`
+    doc += `   ${data.ongoingCosts.breakdown}\n\n`
+    
+    doc += `TOTAL PROJECT INVESTMENT\n`
+    doc += `Minimum: $${data.totalProjectCost.min.toLocaleString()}\n`
+    doc += `Maximum: $${data.totalProjectCost.max.toLocaleString()}\n`
+    doc += `Recommended: $${data.totalProjectCost.recommended.toLocaleString()}\n\n`
+    
+    doc += `SUMMARY\n`
+    doc += `${data.summary}\n\n`
+    
+    doc += `---\n`
+    doc += `This pricing breakdown is based on your organization's size, tech comfort level, and selected opportunity areas. All pricing is subject to final project scope confirmation.\n\n`
+    doc += `THB Operations Hub\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n`
+    
+    return doc
+  }
+
+  const formatSOWDocument = (data) => {
+    if (!data) return ''
+    
+    let doc = `STATEMENT OF WORK\n`
+    doc += `AI Automation Project\n\n`
+    doc += `THB Operations Hub\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n\n`
+    
+    doc += `CLIENT INFORMATION\n`
+    doc += `Client Name: ${formData.clientName || 'TBD'}\n`
+    doc += `Client Email: ${formData.clientEmail || 'TBD'}\n`
+    doc += `Organization Type: ${formData.clientContext.organizationType || 'Not specified'}\n`
+    doc += `Organization Mission: ${formData.clientContext.organizationMission || 'Not specified'}\n`
+    doc += `Team Size: ${formData.clientContext.teamSize || 'Not specified'}\n`
+    doc += `Tech Comfort Level: ${formData.clientContext.techComfortLevel || 'Not specified'}\n`
+    doc += `Primary Goal: ${formData.clientContext.primaryGoal || 'Not specified'}\n\n`
+    
+    doc += `EXECUTIVE SUMMARY\n`
+    doc += `${data.executiveSummary}\n\n`
+    
+    doc += `PROJECT SCOPE & OBJECTIVES\n`
+    doc += `${data.projectScope}\n\n`
+    
+    doc += `DETAILED DELIVERABLES\n`
+    if (data.deliverables && data.deliverables.length > 0) {
+      data.deliverables.forEach((deliverable, index) => {
+        doc += `${index + 1}. ${deliverable.area}\n`
+        doc += `   Description: ${deliverable.description}\n`
+        doc += `   Timeline: ${deliverable.timeline}\n`
+        doc += `   Deliverables:\n`
+        deliverable.deliverables.forEach(item => {
+          doc += `   • ${item}\n`
+        })
+        doc += `\n`
+      })
+    }
+    
+    doc += `PRICING & INVESTMENT\n`
+    doc += `Development Fee: $${data.pricing.developmentFee.toLocaleString()}\n`
+    doc += `Consulting & Setup: $${data.pricing.consultingSetup.toLocaleString()}\n`
+    doc += `Ongoing Monthly: $${data.pricing.ongoingMonthly}/month\n`
+    doc += `Total Project Investment: $${data.pricing.totalProject.toLocaleString()}\n\n`
+    
+    doc += `PROJECT TIMELINE\n`
+    doc += `Total Duration: ${data.timeline.totalDuration}\n\n`
+    doc += `Milestones:\n`
+    data.timeline.milestones.forEach((milestone, index) => {
+      doc += `${index + 1}. ${milestone}\n`
+    })
+    doc += `\n`
+    
+    doc += `CLIENT RESPONSIBILITIES\n`
+    data.clientResponsibilities.forEach((responsibility, index) => {
+      doc += `${index + 1}. ${responsibility}\n`
+    })
+    doc += `\n`
+    
+    doc += `TERMS & CONDITIONS\n`
+    data.termsConditions.forEach((term, index) => {
+      doc += `${index + 1}. ${term}\n`
+    })
+    doc += `\n`
+    
+    doc += `NEXT STEPS\n`
+    data.nextSteps.forEach((step, index) => {
+      doc += `${index + 1}. ${step}\n`
+    })
+    doc += `\n`
+    
+    doc += `---\n`
+    doc += `This Statement of Work outlines the complete scope of work for your AI automation project. Please review, sign, and return to begin implementation.\n\n`
+    doc += `THB Operations Hub\n`
+    doc += `Contact: [Your Contact Information]\n`
+    doc += `Generated: ${new Date().toLocaleDateString()}\n`
+    
+    return doc
+  }
+
+  const copyDocumentToClipboard = async () => {
+    if (!documentToDisplay) return
+    
+    try {
+      await navigator.clipboard.writeText(documentToDisplay)
+      alert('Document copied to clipboard! You can now paste it into Google Docs.')
+    } catch (err) {
+      console.error('Failed to copy document:', err)
+      alert('Failed to copy document. Please try again.')
+    }
   }
 
   const toggleFeasibilityExpansion = (areaId) => {
@@ -355,6 +638,11 @@ const PricingSOW = () => {
       setDocumentSections(sections)
       setClientDocument(documentResult)
       setIsEditingDocument(true)
+      
+      // Set document for display
+      const formattedDoc = formatDocumentForCopy('client', documentResult)
+      setDocumentToDisplay(formattedDoc)
+      setCurrentDocumentType('client')
       
     } catch (error) {
       console.error('Document generation failed:', error)
@@ -454,6 +742,11 @@ const PricingSOW = () => {
       // Use OpenAI API for pricing calculation
       const pricingResult = await openAIAPI.calculatePricingBreakdown(pricingData)
       setPricingBreakdown(pricingResult)
+      
+      // Set document for display
+      const formattedDoc = formatDocumentForCopy('pricing', pricingResult)
+      setDocumentToDisplay(formattedDoc)
+      setCurrentDocumentType('pricing')
       
     } catch (error) {
       console.error('Pricing calculation failed:', error)
@@ -599,6 +892,11 @@ const PricingSOW = () => {
       setSowSections(sections)
       setEnhancedSOW(sowResult)
       setIsEditingSOW(true)
+      
+      // Set document for display
+      const formattedDoc = formatDocumentForCopy('sow', sowResult)
+      setDocumentToDisplay(formattedDoc)
+      setCurrentDocumentType('sow')
       
     } catch (error) {
       console.error('Enhanced SOW generation failed:', error)
@@ -1084,152 +1382,39 @@ This SOW is valid for 30 days from the date of issue.
                 <h3 className="text-lg font-semibold" style={{ color: 'var(--white)' }}>
                   🤖 AI Opportunity Assessment
                 </h3>
-                <div style={{
-                  backgroundColor: 'var(--primary-purple)',
-                  color: 'var(--white)',
-                  padding: 'var(--spacing-2) var(--spacing-3)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--font-size-sm)',
-                  fontWeight: '600'
-                }}>
-                  {getAssessmentProgress()}% Complete
-                </div>
               </div>
               
               <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>
-                Help us identify AI opportunities across your organization through guided discovery questions.
+                Select all opportunities that apply. You can select multiple items in each category or indicate if the client needs guidance. This helps us provide better recommendations.
               </p>
 
-              {aiAssessmentCategories.map((category) => {
-                const assessment = formData.aiAssessment[category.id]
-                const isExpanded = expandedCategories[category.id]
-                const isComplete = assessment.currentActivities.trim() !== '' || 
-                                 assessment.painPoints.trim() !== '' || 
-                                 assessment.interested
-
-                return (
-                  <div key={category.id} style={{
-                    marginBottom: 'var(--spacing-4)',
-                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                    borderRadius: 'var(--radius-lg)',
-                    overflow: 'hidden'
+              {Object.entries(aiOpportunityCategories).map(([categoryKey, category]) => (
+                <div key={categoryKey} style={{
+                  marginBottom: 'var(--spacing-6)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: 'var(--spacing-4)',
+                  backgroundColor: 'rgba(148, 163, 184, 0.05)'
+                }}>
+                  <h4 style={{ 
+                    fontSize: 'var(--font-size-lg)', 
+                    fontWeight: '600', 
+                    color: 'var(--white)',
+                    margin: '0 0 var(--spacing-4) 0'
                   }}>
-                    <div
-                      onClick={() => toggleCategoryExpansion(category.id)}
-                      style={{
-                        padding: 'var(--spacing-4)',
-                        backgroundColor: isComplete ? 'rgba(168, 85, 247, 0.1)' : 'rgba(148, 163, 184, 0.05)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.2)' : 'none'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
-                        <span style={{ fontSize: '1.5rem' }}>{category.icon}</span>
-                        <div>
-                          <h4 style={{ 
-                            fontSize: 'var(--font-size-base)', 
-                            fontWeight: '600', 
-                            color: 'var(--white)',
-                            margin: '0 0 var(--spacing-1) 0'
-                          }}>
-                            {category.title}
-                          </h4>
-                          <p style={{ 
-                            fontSize: 'var(--font-size-sm)', 
-                            color: 'var(--text-secondary)',
-                            margin: '0'
-                          }}>
-                            {category.description}
-                          </p>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-                        {isComplete && (
-                          <div style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: 'var(--primary-purple)'
-                          }} />
-                        )}
-                        <span style={{ 
-                          fontSize: 'var(--font-size-lg)',
-                          color: 'var(--text-secondary)',
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease'
-                        }}>
-                          ▼
-                        </span>
-                      </div>
-                    </div>
-
-                    {isExpanded && (
-                      <div style={{ padding: 'var(--spacing-4)' }}>
-                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                          <label style={{ 
-                            display: 'block', 
-                            marginBottom: 'var(--spacing-2)', 
-                            color: 'var(--text-secondary)',
-                            fontSize: 'var(--font-size-sm)',
-                            fontWeight: '500'
-                          }}>
-                            Current activities in this area
-                          </label>
-                          <textarea
-                            value={assessment.currentActivities}
-                            onChange={(e) => handleAIAssessmentChange(category.id, 'currentActivities', e.target.value)}
-                            rows={3}
-                            style={{
-                              width: '100%',
-                              padding: 'var(--spacing-3)',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(148, 163, 184, 0.3)',
-                              backgroundColor: 'var(--card-bg)',
-                              color: 'var(--text-primary)',
-                              fontSize: 'var(--font-size-sm)',
-                              resize: 'vertical'
-                            }}
-                            placeholder="Describe your current activities in this area..."
-                          />
-                        </div>
-
-                        <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                          <label style={{ 
-                            display: 'block', 
-                            marginBottom: 'var(--spacing-2)', 
-                            color: 'var(--text-secondary)',
-                            fontSize: 'var(--font-size-sm)',
-                            fontWeight: '500'
-                          }}>
-                            Pain points and challenges
-                          </label>
-                          <textarea
-                            value={assessment.painPoints}
-                            onChange={(e) => handleAIAssessmentChange(category.id, 'painPoints', e.target.value)}
-                            rows={3}
-                            style={{
-                              width: '100%',
-                              padding: 'var(--spacing-3)',
-                              borderRadius: 'var(--radius-md)',
-                              border: '1px solid rgba(148, 163, 184, 0.3)',
-                              backgroundColor: 'var(--card-bg)',
-                              color: 'var(--text-primary)',
-                              fontSize: 'var(--font-size-sm)',
-                              resize: 'vertical'
-                            }}
-                            placeholder="What challenges or pain points do you face in this area?"
-                          />
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                    {category.title}
+                  </h4>
+                  
+                  <div style={{ display: 'grid', gap: 'var(--spacing-3)' }}>
+                    {category.options.map((option) => {
+                      const isSelected = formData.aiAssessment[categoryKey]?.includes(option) || false
+                      return (
+                        <div key={option} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
                           <input
                             type="checkbox"
-                            id={`${category.id}-interested`}
-                            checked={assessment.interested}
-                            onChange={(e) => handleAIAssessmentChange(category.id, 'interested', e.target.checked)}
+                            id={`${categoryKey}-${option}`}
+                            checked={isSelected}
+                            onChange={() => handleAIAssessmentCheckbox(categoryKey, option)}
                             style={{
                               width: '16px',
                               height: '16px',
@@ -1237,28 +1422,64 @@ This SOW is valid for 30 days from the date of issue.
                             }}
                           />
                           <label 
-                            htmlFor={`${category.id}-interested`}
+                            htmlFor={`${categoryKey}-${option}`}
                             style={{ 
                               color: 'var(--text-secondary)',
                               fontSize: 'var(--font-size-sm)',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              flex: 1
                             }}
                           >
-                            Interested in AI solutions for this area
+                            {option}
                           </label>
                         </div>
-                      </div>
-                    )}
+                      )
+                    })}
                   </div>
-                )
-              })}
+                </div>
+              ))}
+
+              {/* Discovery Notes & Client Summary */}
+              <div style={{
+                marginTop: 'var(--spacing-6)',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--spacing-4)',
+                backgroundColor: 'rgba(148, 163, 184, 0.05)'
+              }}>
+                <h4 style={{ 
+                  fontSize: 'var(--font-size-lg)', 
+                  fontWeight: '600', 
+                  color: 'var(--white)',
+                  margin: '0 0 var(--spacing-4) 0'
+                }}>
+                  Discovery Notes & Client Summary
+                </h4>
+                <textarea
+                  value={formData.discoveryNotes}
+                  onChange={(e) => handleInputChange('discoveryNotes', e.target.value)}
+                  placeholder="Add your notes from the discovery conversation, client context, specific challenges mentioned, and any additional insights..."
+                  style={{
+                    width: '100%',
+                    minHeight: '120px',
+                    padding: 'var(--spacing-3)',
+                    backgroundColor: 'var(--white)',
+                    color: 'var(--black)',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                    resize: 'vertical',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
             </div>
 
             {/* Analyze Opportunities Button */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>
               <button
                 onClick={analyzeFeasibility}
-                disabled={isAnalyzingFeasibility || getAssessmentProgress() === 0}
+                disabled={isAnalyzingFeasibility || !hasSelectedOpportunities()}
                 style={{
                   width: '100%',
                   padding: 'var(--spacing-4)',
@@ -1269,7 +1490,7 @@ This SOW is valid for 30 days from the date of issue.
                   fontSize: 'var(--font-size-lg)',
                   fontWeight: '600',
                   cursor: isAnalyzingFeasibility ? 'not-allowed' : 'pointer',
-                  opacity: (isAnalyzingFeasibility || getAssessmentProgress() === 0) ? 0.6 : 1,
+                  opacity: (isAnalyzingFeasibility || !hasSelectedOpportunities()) ? 0.6 : 1,
                   transition: 'all 0.2s ease'
                 }}
               >
@@ -2093,7 +2314,36 @@ This SOW is valid for 30 days from the date of issue.
 
           {/* Results Section */}
           <div className="card">
-            <h2 className="text-xl font-semibold mb-6">AI Analysis Results</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-6)' }}>
+              <h2 className="text-xl font-semibold">
+                {currentDocumentType === 'feasibility' && '📊 Feasibility Analysis'}
+                {currentDocumentType === 'client' && '📋 Client Document'}
+                {currentDocumentType === 'pricing' && '💰 Pricing Breakdown'}
+                {currentDocumentType === 'sow' && '📄 Statement of Work'}
+                {!currentDocumentType && '📄 Document Preview'}
+              </h2>
+              
+              {documentToDisplay && (
+                <button
+                  onClick={copyDocumentToClipboard}
+                  style={{
+                    padding: 'var(--spacing-2) var(--spacing-4)',
+                    backgroundColor: 'var(--primary-purple)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-2)'
+                  }}
+                >
+                  📋 Copy Document
+                </button>
+              )}
+            </div>
             
             {!analysis ? (
               <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--text-secondary)' }}>

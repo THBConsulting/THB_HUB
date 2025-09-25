@@ -4,10 +4,41 @@ import { useSharedData } from '../contexts/SharedDataContext'
 
 const PricingSOW = () => {
   const { addProspect, strategyGoals } = useSharedData()
+  
+  // Tab management
+  const [activeTab, setActiveTab] = useState('pricing')
+  
+  // Enhanced business state
+  const [businessState, setBusinessState] = useState({
+    prospects: [],
+    clients: [],
+    revenue: {
+      infrastructure: 0,
+      customTools: 0,
+      aiSystems: 0,
+      cultureHub: 0
+    },
+    targets: {
+      infrastructure: { clients: 20, revenue: 40000 },
+      customTools: { clients: 20, revenue: 75000 },
+      aiSystems: { clients: 5, revenue: 31250 },
+      cultureHub: { clients: 5, revenue: 12500 },
+      total: { clients: 50, revenue: 158750 }
+    },
+    serviceDefinitions: {
+      infrastructure: { name: "AI Infrastructure", priceRange: "1,500-2,500", avgPrice: 2000, weeks: 2 },
+      customTools: { name: "Custom AI Tools", priceRange: "2,500-5,000", avgPrice: 3750, weeks: 3 },
+      aiSystems: { name: "AI Systems Builder", priceRange: "5,000-7,500", avgPrice: 6250, weeks: 4 },
+      cultureHub: { name: "Culture Hub", priceRange: "2,500", avgPrice: 2500, weeks: 1 }
+    }
+  })
+  
   const [formData, setFormData] = useState({
     clientType: '',
     clientName: '',
     clientEmail: '',
+    // Service Selection
+    selectedService: '',
     // Client Context
     clientContext: {
       organizationType: '',
@@ -1148,18 +1179,97 @@ This SOW is valid for 30 days from the date of issue.
     setIsGeneratingSOW(false)
   }
 
+  // Tab navigation component
+  const TabNavigation = () => (
+    <div style={{ marginBottom: 'var(--spacing-6)' }}>
+      <div style={{ 
+        display: 'flex', 
+        borderBottom: '2px solid rgba(148, 163, 184, 0.2)',
+        marginBottom: 'var(--spacing-6)'
+      }}>
+        {[
+          { id: 'pricing', label: '💰 Pricing Analysis', icon: '💰' },
+          { id: 'pipeline', label: '📈 Prospect Pipeline', icon: '📈' },
+          { id: 'revenue', label: '💵 Revenue Tracking', icon: '💵' },
+          { id: 'planning', label: '📊 Strategic Planning', icon: '📊' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: 'var(--spacing-4) var(--spacing-6)',
+              backgroundColor: activeTab === tab.id ? 'var(--primary-purple)' : 'transparent',
+              color: activeTab === tab.id ? 'var(--white)' : 'var(--text-secondary)',
+              border: 'none',
+              borderBottom: activeTab === tab.id ? '2px solid var(--primary-purple)' : '2px solid transparent',
+              cursor: 'pointer',
+              fontSize: 'var(--font-size-base)',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              borderRadius: 'var(--radius-md) var(--radius-md) 0 0'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div style={{ padding: 'var(--spacing-8) 0' }}>
       <div className="container">
         <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--white)' }}>
-          💰 Pricing & SOW Tool
+          🏢 Business Management System
         </h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-8)' }}>
+        <TabNavigation />
+
+        {/* Tab Content */}
+        {activeTab === 'pricing' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-8)' }}>
           {/* Form Section */}
           <div className="card">
             <h2 className="text-xl font-semibold mb-6">Project Information</h2>
             
+            {/* Service Selection */}
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>Service Selection</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
+                {Object.entries(businessState.serviceDefinitions).map(([key, service]) => (
+                  <div key={key} style={{ marginBottom: 'var(--spacing-3)' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      padding: 'var(--spacing-3)',
+                      backgroundColor: formData.selectedService === key ? 'var(--primary-purple)' : 'var(--dark-black)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <input
+                        type="radio"
+                        name="service"
+                        value={key}
+                        checked={formData.selectedService === key}
+                        onChange={(e) => handleInputChange('selectedService', e.target.value)}
+                        style={{ marginRight: 'var(--spacing-3)' }}
+                      />
+                      <div>
+                        <div style={{ color: formData.selectedService === key ? 'var(--white)' : 'var(--white)', fontWeight: '600' }}>
+                          {service.name}
+                        </div>
+                        <div style={{ color: formData.selectedService === key ? 'var(--white)' : 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                          ${service.priceRange} • {service.weeks} weeks
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Client Information */}
             <div style={{ marginBottom: 'var(--spacing-6)' }}>
               <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--white)' }}>Client Information</h3>
@@ -2450,6 +2560,325 @@ This SOW is valid for 30 days from the date of issue.
             )}
           </div>
         </div>
+        )}
+
+        {/* Prospect Pipeline Tab */}
+        {activeTab === 'pipeline' && (
+          <div className="card">
+            <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
+              📈 Prospect Pipeline Management
+            </h2>
+            
+            <div style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+                <h3 style={{ color: 'var(--white)' }}>Current Prospects ({businessState.prospects.length})</h3>
+                <button
+                  onClick={() => {
+                    if (formData.selectedService && formData.clientName) {
+                      const newProspect = {
+                        id: Date.now(),
+                        clientName: formData.clientName,
+                        email: formData.clientEmail,
+                        organization: formData.clientContext.organizationType,
+                        serviceType: formData.selectedService,
+                        estimatedValue: businessState.serviceDefinitions[formData.selectedService]?.avgPrice || 0,
+                        status: 'Discovery',
+                        dateCreated: new Date().toISOString().split('T')[0],
+                        notes: formData.discoveryNotes
+                      }
+                      setBusinessState(prev => ({
+                        ...prev,
+                        prospects: [...prev.prospects, newProspect]
+                      }))
+                      alert('Prospect added to pipeline!')
+                    } else {
+                      alert('Please complete the pricing analysis first to create a prospect.')
+                    }
+                  }}
+                  style={{
+                    padding: 'var(--spacing-3) var(--spacing-4)',
+                    backgroundColor: 'var(--secondary-blue)',
+                    color: 'var(--white)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ➕ Add Prospect from Pricing
+                </button>
+              </div>
+              
+              {businessState.prospects.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 'var(--spacing-8)', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>📈</div>
+                  <p>No prospects yet. Complete a pricing analysis to create your first prospect.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--spacing-4)' }}>
+                  {businessState.prospects.map(prospect => (
+                    <div key={prospect.id} className="card" style={{ padding: 'var(--spacing-4)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-3)' }}>
+                        <h4 style={{ color: 'var(--white)', margin: 0 }}>{prospect.clientName}</h4>
+                        <select
+                          value={prospect.status}
+                          onChange={(e) => {
+                            setBusinessState(prev => ({
+                              ...prev,
+                              prospects: prev.prospects.map(p => 
+                                p.id === prospect.id ? { ...p, status: e.target.value } : p
+                              )
+                            }))
+                          }}
+                          style={{
+                            padding: 'var(--spacing-1) var(--spacing-2)',
+                            backgroundColor: 'var(--dark-black)',
+                            color: 'var(--white)',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 'var(--font-size-xs)'
+                          }}
+                        >
+                          <option value="Discovery">Discovery</option>
+                          <option value="Proposal Sent">Proposal Sent</option>
+                          <option value="Negotiating">Negotiating</option>
+                          <option value="Closed Won">Closed Won</option>
+                          <option value="Closed Lost">Closed Lost</option>
+                        </select>
+                      </div>
+                      
+                      <div style={{ marginBottom: 'var(--spacing-3)' }}>
+                        <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-1)' }}>
+                          Service: {businessState.serviceDefinitions[prospect.serviceType]?.name || prospect.serviceType}
+                        </div>
+                        <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                          ${prospect.estimatedValue?.toLocaleString() || 'TBD'}
+                        </div>
+                      </div>
+                      
+                      <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-secondary)' }}>
+                        Created: {prospect.dateCreated}
+                      </div>
+                      
+                      {prospect.notes && (
+                        <div style={{
+                          backgroundColor: 'var(--dark-black)',
+                          padding: 'var(--spacing-2)',
+                          borderRadius: 'var(--radius-sm)',
+                          marginTop: 'var(--spacing-3)',
+                          fontSize: 'var(--font-size-xs)',
+                          color: 'var(--text-secondary)',
+                          lineHeight: '1.4'
+                        }}>
+                          {prospect.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Revenue Tracking Tab */}
+        {activeTab === 'revenue' && (
+          <div className="card">
+            <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
+              💵 Revenue Tracking Dashboard
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+              {Object.entries(businessState.serviceDefinitions).map(([key, service]) => {
+                const actualClients = businessState.prospects.filter(p => p.serviceType === key && p.status === 'Closed Won').length
+                const actualRevenue = actualClients * service.avgPrice
+                const target = businessState.targets[key]
+                const progress = (actualClients / target.clients) * 100
+                
+                return (
+                  <div key={key} style={{ textAlign: 'center', padding: 'var(--spacing-4)', backgroundColor: 'var(--dark-black)', borderRadius: 'var(--radius-lg)' }}>
+                    <h4 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-2)' }}>{service.name}</h4>
+                    <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold', marginBottom: 'var(--spacing-1)' }}>
+                      ${actualRevenue.toLocaleString()}
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                      of ${target.revenue.toLocaleString()} target
+                    </div>
+                    <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-2)' }}>
+                      {actualClients}/{target.clients} clients
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: '6px',
+                      backgroundColor: 'var(--dark-black)',
+                      borderRadius: '3px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${Math.min(progress, 100)}%`,
+                        height: '100%',
+                        backgroundColor: progress >= 100 ? '#10B981' : 'var(--primary-purple)',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            
+            <div style={{ backgroundColor: 'var(--dark-black)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)' }}>
+              <h3 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-4)' }}>Overall Progress</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-4)' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold' }}>
+                    ${Object.values(businessState.serviceDefinitions).reduce((sum, service, index) => {
+                      const key = Object.keys(businessState.serviceDefinitions)[index]
+                      const actualClients = businessState.prospects.filter(p => p.serviceType === key && p.status === 'Closed Won').length
+                      return sum + (actualClients * service.avgPrice)
+                    }, 0).toLocaleString()}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Revenue</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold' }}>
+                    {businessState.prospects.filter(p => p.status === 'Closed Won').length}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Closed Clients</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: '#10B981', fontSize: 'var(--font-size-2xl)', fontWeight: 'bold' }}>
+                    {businessState.prospects.length}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Prospects</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Strategic Planning Tab */}
+        {activeTab === 'planning' && (
+          <div className="card">
+            <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
+              📊 Strategic Planning & Service Mix Modeling
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-6)' }}>
+              {/* Service Mix Planning */}
+              <div>
+                <h3 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-4)' }}>Service Mix Planning</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: 'var(--spacing-4)' }}>
+                  Adjust targets for each service type to model different business scenarios.
+                </p>
+                
+                {Object.entries(businessState.serviceDefinitions).map(([key, service]) => {
+                  const target = businessState.targets[key]
+                  return (
+                    <div key={key} style={{ marginBottom: 'var(--spacing-4)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
+                        <label style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
+                          {service.name}
+                        </label>
+                        <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+                          ${service.avgPrice.toLocaleString()} each
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                        <input
+                          type="range"
+                          min={0}
+                          max={50}
+                          step={1}
+                          value={target.clients}
+                          onChange={(e) => {
+                            const newClients = parseInt(e.target.value)
+                            setBusinessState(prev => ({
+                              ...prev,
+                              targets: {
+                                ...prev.targets,
+                                [key]: {
+                                  clients: newClients,
+                                  revenue: newClients * service.avgPrice
+                                }
+                              }
+                            }))
+                          }}
+                          style={{
+                            flex: 1,
+                            height: '6px',
+                            borderRadius: '3px',
+                            background: `linear-gradient(to right, var(--primary-purple) 0%, var(--primary-purple) ${(target.clients / 50) * 100}%, rgba(148, 163, 184, 0.3) ${(target.clients / 50) * 100}%, rgba(148, 163, 184, 0.3) 100%)`,
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        />
+                        <span style={{ color: 'var(--white)', fontWeight: '600', minWidth: '30px' }}>
+                          {target.clients}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Planning Summary */}
+              <div>
+                <h3 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-4)' }}>Planning Summary</h3>
+                
+                <div style={{
+                  backgroundColor: 'var(--dark-black)',
+                  padding: 'var(--spacing-4)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  marginBottom: 'var(--spacing-4)'
+                }}>
+                  <div style={{ marginBottom: 'var(--spacing-3)' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Annual Revenue Target</div>
+                    <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                      ${Object.values(businessState.targets).reduce((sum, target) => sum + target.revenue, 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: 'var(--spacing-3)' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Clients Target</div>
+                    <div style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                      {Object.values(businessState.targets).reduce((sum, target) => sum + target.clients, 0)}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Average Project Value</div>
+                    <div style={{ color: '#10B981', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
+                      ${Math.round(Object.values(businessState.targets).reduce((sum, target) => sum + target.revenue, 0) / Object.values(businessState.targets).reduce((sum, target) => sum + target.clients, 0))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'var(--dark-black)',
+                  padding: 'var(--spacing-4)',
+                  borderRadius: 'var(--radius-lg)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)'
+                }}>
+                  <h4 style={{ color: 'var(--white)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>
+                    Revenue by Service
+                  </h4>
+                  {Object.entries(businessState.targets).filter(([key]) => key !== 'total').map(([key, target]) => (
+                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                        {businessState.serviceDefinitions[key]?.name || key}
+                      </span>
+                      <span style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
+                        ${target.revenue.toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

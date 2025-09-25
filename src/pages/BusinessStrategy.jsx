@@ -416,7 +416,7 @@ const BusinessStrategy = () => {
   const Step3_ServicePlanning = () => (
     <div className="card">
       <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
-        Step 3: Service-Based Revenue Planning
+        Step 3: Service-Based Revenue Planning (Updated)
       </h2>
       
       <p style={{ 

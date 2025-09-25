@@ -20,6 +20,13 @@ const BusinessStrategy = () => {
     capacity: {
       weeklyHours: strategyGoals.capacity.weeklyHours,
       maxConcurrentProjects: strategyGoals.capacity.maxConcurrentProjects
+    },
+    // Service-based planning
+    services: {
+      infrastructure: 0,
+      customTools: 0,
+      aiSystems: 0,
+      cultureHub: 0
     }
   })
 
@@ -34,6 +41,34 @@ const BusinessStrategy = () => {
       capacity: strategyModel.capacity
     })
   }, [strategyModel, setStrategyGoals])
+
+  // Service definitions
+  const services = {
+    infrastructure: { 
+      name: "AI Infrastructure", 
+      price: 2500, 
+      maxClients: 30,
+      avgWeeks: 2 
+    },
+    customTools: { 
+      name: "Custom AI Tools", 
+      price: 5000, 
+      maxClients: 25,
+      avgWeeks: 3 
+    },
+    aiSystems: { 
+      name: "AI Systems Builder", 
+      price: 7500, 
+      maxClients: 10,
+      avgWeeks: 4 
+    },
+    cultureHub: { 
+      name: "Culture Hub", 
+      price: 2500, 
+      maxClients: 10,
+      avgWeeks: 1 
+    }
+  }
 
   // Simplified scenarios with clear explanations
   const scenarios = {
@@ -95,39 +130,42 @@ const BusinessStrategy = () => {
     }
   }
 
-  // Calculate revenue and metrics
+  // Calculate revenue and metrics based on services
   const calculateMetrics = () => {
-    const scenario = scenarios[strategyModel.selectedScenario]
-    const serviceValues = {
-      tier1Projects: 2250,
-      tier2Projects: 4000,
-      tier3Projects: 6250,
-      cultureHub: 1250,
-      backendServices: 175,
-      training: 2000
-    }
-
-    let totalRevenue = 0
-    let totalProjects = 0
-
-    Object.entries(scenario.config).forEach(([key, quantity]) => {
-      totalRevenue += quantity * serviceValues[key]
-      if (key.includes('Projects')) {
-        totalProjects += quantity
-      }
-    })
-
-    const clientsNeeded = Math.ceil(totalProjects / 4)
-    const weeklyHoursNeeded = (totalProjects * 6 * 8) / 52 // 6 weeks avg, 8 hours per week
-    const prospectsNeeded = Math.ceil(clientsNeeded * 3)
-
+    const { services: serviceQuantities } = strategyModel
+    
+    // Calculate total revenue from services
+    const totalRevenue = (serviceQuantities.infrastructure * services.infrastructure.price) + 
+                       (serviceQuantities.customTools * services.customTools.price) + 
+                       (serviceQuantities.aiSystems * services.aiSystems.price) + 
+                       (serviceQuantities.cultureHub * services.cultureHub.price)
+    
+    // Calculate total clients
+    const totalClients = serviceQuantities.infrastructure + 
+                        serviceQuantities.customTools + 
+                        serviceQuantities.aiSystems + 
+                        serviceQuantities.cultureHub
+    
+    // Calculate weekly hours needed (based on concurrent projects)
+    const weeklyHours = (serviceQuantities.infrastructure * 0.5) + 
+                       (serviceQuantities.customTools * 0.75) + 
+                       (serviceQuantities.aiSystems * 1.0) + 
+                       (serviceQuantities.cultureHub * 0.25)
+    
+    // Calculate monthly prospects needed (3:1 ratio spread over 12 months)
+    const monthlyProspects = totalClients * 0.25
+    
     return {
       totalRevenue,
-      totalProjects,
-      clientsNeeded,
-      weeklyHoursNeeded,
-      prospectsNeeded,
-      scenario
+      totalClients,
+      weeklyHours,
+      monthlyProspects,
+      serviceBreakdown: {
+        infrastructure: serviceQuantities.infrastructure * services.infrastructure.price,
+        customTools: serviceQuantities.customTools * services.customTools.price,
+        aiSystems: serviceQuantities.aiSystems * services.aiSystems.price,
+        cultureHub: serviceQuantities.cultureHub * services.cultureHub.price
+      }
     }
   }
 
@@ -147,11 +185,9 @@ const BusinessStrategy = () => {
           activeProjects: projectMetrics.activeProjects,
           completedProjects: projectMetrics.completedProjects,
           currentRevenue: projectMetrics.totalReceived,
-          tierBreakdown: {
-            tier1: projectMetrics.tier1Projects,
-            tier2: projectMetrics.tier2Projects,
-            tier3: projectMetrics.tier3Projects
-          }
+          serviceBreakdown: metrics.serviceBreakdown,
+          totalClients: metrics.totalClients,
+          weeklyHours: metrics.weeklyHours
         }
       }
 
@@ -163,8 +199,8 @@ const BusinessStrategy = () => {
       setAiAnalysis({
         feasibilityScore: 7,
         feasibilityExplanation: 'Strategy appears feasible with current capacity constraints.',
-        timeCommitment: `Estimated ${metrics.weeklyHoursNeeded.toFixed(0)} hours per week required for project delivery.`,
-        marketReality: `Need to maintain ${metrics.prospectsNeeded} active prospects in pipeline. Currently have ${projects.length} projects in pipeline.`,
+        timeCommitment: `Estimated ${metrics.weeklyHours.toFixed(1)} hours per week required for project delivery.`,
+        marketReality: `Need to maintain ${metrics.monthlyProspects.toFixed(1)} monthly prospects in pipeline. Currently have ${projects.length} projects in pipeline.`,
         riskAssessment: 'Moderate risk due to client concentration. Consider diversifying client base.',
         growthPotential: 'Good scalability potential with platform approach.',
         recommendations: [
@@ -377,10 +413,10 @@ const BusinessStrategy = () => {
     </div>
   )
 
-  const Step3_CapacityReview = () => (
+  const Step3_ServicePlanning = () => (
     <div className="card">
       <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-6)' }}>
-        Step 3: Review Your Capacity
+        Step 3: Service-Based Revenue Planning
       </h2>
       
       <p style={{ 
@@ -389,120 +425,149 @@ const BusinessStrategy = () => {
         marginBottom: 'var(--spacing-6)',
         lineHeight: '1.6'
       }}>
-        Let's make sure your chosen strategy fits with your available time and capacity.
+        Plan your revenue by setting targets for each service type. Adjust the sliders to see how it affects your total revenue and capacity needs.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-6)', marginBottom: 'var(--spacing-6)' }}>
+        {/* Service Sliders */}
         <div>
           <h3 style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-lg)', marginBottom: 'var(--spacing-4)' }}>
-            Your Capacity
+            Service Targets
           </h3>
           
-          <div style={{ marginBottom: 'var(--spacing-4)' }}>
-            <label style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
-              Available Hours per Week
-            </label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center', marginTop: 'var(--spacing-2)' }}>
-              <input
-                type="range"
-                min={20}
-                max={60}
-                step={5}
-                value={strategyModel.capacity.weeklyHours}
-                onChange={(e) => setStrategyModel(prev => ({ 
-                  ...prev, 
-                  capacity: { ...prev.capacity, weeklyHours: parseInt(e.target.value) }
-                }))}
-                style={{
-                  flex: 1,
-                  height: '6px',
-                  borderRadius: '3px',
-                  background: `linear-gradient(to right, var(--secondary-blue) 0%, var(--secondary-blue) ${((strategyModel.capacity.weeklyHours - 20) / (60 - 20)) * 100}%, rgba(148, 163, 184, 0.3) ${((strategyModel.capacity.weeklyHours - 20) / (60 - 20)) * 100}%, rgba(148, 163, 184, 0.3) 100%)`,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              />
-              <span style={{ color: 'var(--white)', fontWeight: '600', minWidth: '40px' }}>
-                {strategyModel.capacity.weeklyHours}h
-              </span>
+          {Object.entries(services).map(([key, service]) => (
+            <div key={key} style={{ marginBottom: 'var(--spacing-4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
+                <label style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
+                  {service.name}
+                </label>
+                <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-sm)', fontWeight: '600' }}>
+                  ${service.price.toLocaleString()} each
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center' }}>
+                <input
+                  type="range"
+                  min={0}
+                  max={service.maxClients}
+                  step={1}
+                  value={strategyModel.services[key]}
+                  onChange={(e) => setStrategyModel(prev => ({ 
+                    ...prev, 
+                    services: { ...prev.services, [key]: parseInt(e.target.value) }
+                  }))}
+                  style={{
+                    flex: 1,
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: `linear-gradient(to right, var(--secondary-blue) 0%, var(--secondary-blue) ${(strategyModel.services[key] / service.maxClients) * 100}%, rgba(148, 163, 184, 0.3) ${(strategyModel.services[key] / service.maxClients) * 100}%, rgba(148, 163, 184, 0.3) 100%)`,
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                />
+                <span style={{ color: 'var(--white)', fontWeight: '600', minWidth: '30px' }}>
+                  {strategyModel.services[key]}
+                </span>
+              </div>
             </div>
-          </div>
-
-          <div>
-            <label style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
-              Max Concurrent Projects
-            </label>
-            <div style={{ display: 'flex', gap: 'var(--spacing-2)', alignItems: 'center', marginTop: 'var(--spacing-2)' }}>
-              <input
-                type="range"
-                min={1}
-                max={8}
-                step={1}
-                value={strategyModel.capacity.maxConcurrentProjects}
-                onChange={(e) => setStrategyModel(prev => ({ 
-                  ...prev, 
-                  capacity: { ...prev.capacity, maxConcurrentProjects: parseInt(e.target.value) }
-                }))}
-                style={{
-                  flex: 1,
-                  height: '6px',
-                  borderRadius: '3px',
-                  background: `linear-gradient(to right, var(--secondary-blue) 0%, var(--secondary-blue) ${((strategyModel.capacity.maxConcurrentProjects - 1) / (8 - 1)) * 100}%, rgba(148, 163, 184, 0.3) ${((strategyModel.capacity.maxConcurrentProjects - 1) / (8 - 1)) * 100}%, rgba(148, 163, 184, 0.3) 100%)`,
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              />
-              <span style={{ color: 'var(--white)', fontWeight: '600', minWidth: '20px' }}>
-                {strategyModel.capacity.maxConcurrentProjects}
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
 
+        {/* Revenue & Capacity Summary */}
         <div>
           <h3 style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-lg)', marginBottom: 'var(--spacing-4)' }}>
-            Strategy Requirements
+            Revenue & Capacity Summary
           </h3>
           
           <div style={{
             backgroundColor: 'var(--dark-black)',
             padding: 'var(--spacing-4)',
             borderRadius: 'var(--radius-lg)',
-            border: '1px solid rgba(148, 163, 184, 0.2)'
+            border: '1px solid rgba(148, 163, 184, 0.2)',
+            marginBottom: 'var(--spacing-4)'
           }}>
             <div style={{ marginBottom: 'var(--spacing-3)' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Weekly Hours Needed</div>
-              <div style={{ 
-                color: metrics.weeklyHoursNeeded > strategyModel.capacity.weeklyHours ? '#EF4444' : '#10B981', 
-                fontSize: 'var(--font-size-lg)', 
-                fontWeight: 'bold' 
-              }}>
-                {metrics.weeklyHoursNeeded.toFixed(0)}h
-                {metrics.weeklyHoursNeeded > strategyModel.capacity.weeklyHours && ' ⚠️'}
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Annual Revenue</div>
+              <div style={{ color: 'var(--primary-purple)', fontSize: 'var(--font-size-xl)', fontWeight: 'bold' }}>
+                ${metrics.totalRevenue.toLocaleString()}
               </div>
             </div>
             
             <div style={{ marginBottom: 'var(--spacing-3)' }}>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Projects</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Clients</div>
               <div style={{ 
-                color: metrics.totalProjects > strategyModel.capacity.maxConcurrentProjects ? '#EF4444' : '#10B981', 
+                color: metrics.totalClients > 50 ? '#EF4444' : '#10B981', 
                 fontSize: 'var(--font-size-lg)', 
                 fontWeight: 'bold' 
               }}>
-                {metrics.totalProjects}
-                {metrics.totalProjects > strategyModel.capacity.maxConcurrentProjects && ' ⚠️'}
+                {metrics.totalClients}
+                {metrics.totalClients > 50 && ' ⚠️'}
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: 'var(--spacing-3)' }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Weekly Hours Needed</div>
+              <div style={{ 
+                color: metrics.weeklyHours > 50 ? '#EF4444' : '#10B981', 
+                fontSize: 'var(--font-size-lg)', 
+                fontWeight: 'bold' 
+              }}>
+                {metrics.weeklyHours.toFixed(1)}h
+                {metrics.weeklyHours > 50 && ' ⚠️'}
               </div>
             </div>
             
             <div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Clients Needed</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Monthly Prospects Needed</div>
               <div style={{ color: 'var(--white)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
-                {metrics.clientsNeeded}
+                {metrics.monthlyProspects.toFixed(1)}
               </div>
             </div>
           </div>
+
+          {/* Service Revenue Breakdown */}
+          <div style={{
+            backgroundColor: 'var(--dark-black)',
+            padding: 'var(--spacing-4)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid rgba(148, 163, 184, 0.2)'
+          }}>
+            <h4 style={{ color: 'var(--white)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>
+              Revenue by Service
+            </h4>
+            {Object.entries(metrics.serviceBreakdown).map(([key, revenue]) => (
+              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                  {services[key].name}
+                </span>
+                <span style={{ color: 'var(--white)', fontSize: 'var(--font-size-sm)', fontWeight: '500' }}>
+                  ${revenue.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Capacity Warnings */}
+      {(metrics.totalClients > 50 || metrics.weeklyHours > 50) && (
+        <div style={{
+          backgroundColor: '#FEF2F2',
+          border: '1px solid #FECACA',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--spacing-4)',
+          marginBottom: 'var(--spacing-6)'
+        }}>
+          <div style={{ color: '#DC2626', fontSize: 'var(--font-size-sm)', fontWeight: '600', marginBottom: 'var(--spacing-2)' }}>
+            ⚠️ Capacity Warning
+          </div>
+          <div style={{ color: '#DC2626', fontSize: 'var(--font-size-sm)' }}>
+            {metrics.totalClients > 50 && `You're targeting ${metrics.totalClients} clients (max recommended: 50). `}
+            {metrics.weeklyHours > 50 && `You're planning ${metrics.weeklyHours.toFixed(1)} hours per week (max recommended: 50). `}
+            Consider reducing targets or increasing capacity.
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 'var(--spacing-4)', justifyContent: 'center' }}>
         <button
@@ -875,7 +940,7 @@ const BusinessStrategy = () => {
         {/* Step content */}
         {currentStep === 1 && <Step1_RevenueTarget />}
         {currentStep === 2 && <Step2_StrategySelection />}
-        {currentStep === 3 && <Step3_CapacityReview />}
+        {currentStep === 3 && <Step3_ServicePlanning />}
         {currentStep === 4 && <Step4_AIAnalysis />}
 
         {/* Quick summary */}
@@ -908,12 +973,12 @@ const BusinessStrategy = () => {
                 </div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Hours/Week</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Total Clients</div>
                 <div style={{ color: 'var(--secondary-blue)', fontSize: 'var(--font-size-lg)', fontWeight: 'bold' }}>
-                  {metrics.weeklyHoursNeeded.toFixed(0)}h
+                  {metrics.totalClients}
                 </div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-xs)' }}>
-                  {projects.length > 0 && `${projects.length} projects`}
+                  {metrics.weeklyHours.toFixed(1)}h/week needed
                 </div>
               </div>
             </div>
